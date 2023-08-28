@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}MCDS: Main{% endblock %}
+
+{% block content %}
+<div class="header">
+  <h1> Main </h1>
+  <h2> Hello {{ uname }} </h2>
+
+  <div class="navigation">
+    <a href="{% url 'logout' %}" class="linkbutton navbutton"> log out </a>
+  </div>  
+</div>
+
+<hr>
+
+<div class="content">
+
+  {% if messages %}
+  <div class="messagebox">
+    <ul class="messages">
+      {% for message in messages %}
+      <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <div class="assignments contentbox">
+    <h3 class="boxheader"> Your assigned projects </h3>
+    <table>
+      <thead>
+	<tr>
+	  <th> Project ID </th>
+	  <th> Project name </th>
+	  <th> Assigned by </th>
+	  <th> Assignment date </th>
+	  <th> Upload to project </th>
+	  <th> View data and trim </th>
+	  <th> Download data </th>
+	</tr>
+      </thead>
+      <tbody>
+	{% for a in assigned %}
+	<tr>
+	  <td> {{ a.project.id }} </td>
+	  <td> {{ a.project.name }} </td>
+	  <td> {{ a.author }} </td>
+	  <td> {{ a.date | date:"Y-m-d H:i:s" }} </td>
+	  <td>
+	    <a href="/mcds/uploadmeasurements/{{ a.project.name }}"
+	       class="linkbutton rowbutton"> uploads </a>
+	  </td>
+	  <td>
+	    <a href="/mcds/viewprojectdata/{{ a.project.name }}"
+	       class="linkbutton rowbutton"> view data </a>
+	  </td>
+	  <td>
+	    <a href="/mcds/createdownload/{{ a.project.name }}"
+	       class="linkbutton rowbutton"> downloads </a>
+	  </td>
+	</tr>
+      </tbody>
+      {% endfor %}
+    </table>
+  </div>
+
+  {% if user.is_staff %}
+  <div class="projects contentbox">
+    <h3 class="boxheader"> All projects </h3>
+    <p> - visible only for staff - </p>
+    <table>
+      <thead>
+	<tr>
+	  <th> ID </th>
+	  <th> Project name </th>
+	  <th> Contact person </th>
+	  <th> Contact email </th>
+	  <th> Date created </th>
+	  <th> Added by </th>
+	  <th> Active </th>
+	  <th> Manage </th>
+	</tr>
+      </thead>
+      <tbody>
+	{% for p in projects %}
+	<tr>
+	  <td> {{ p.id }} </td>
+	  <td> {{ p.name }} </td>
+	  <td> {{ p.contact_name }} </td>
+	  <td> {{ p.contact_email }} </td>
+	  <td> {{ p.date | date:"Y-m-d H:i:s" }} </td>
+	  <td> {{ p.author }} </td>
+	  <td>
+	    {% if p.active %}
+	    <span class="accepted_status"> Yes </span>
+	    {% else %}
+	    <span class="retracted_status"> No </span>
+	    {% endif %}
+	  </td>
+	  <td>
+	    <a href="/mcds/manageproject/{{ p.name }}"
+	       class="linkbutton rowbutton"> manage </a>
+	  </td>
+	</tr>
+	{% endfor %}
+      </tbody>
+    </table>
+    <div class="posteditlink">
+      <a href="/mcds/createproject" class="linkbutton belowbutton"> create project </a>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if user.is_staff %}
+  <div class="dataspecs contentbox">
+    <h3 class="boxheader"> All data specifications </h3>
+    <p> - visible only for staff - </p>
+    <table>
+      <thead>
+	<tr>
+	  <th> ID </th>
+	  <th> Name </th>
+	  <th> Uploader </th>
+	  <th> Date created </th>
+	  <th> Active </th>
+	  <th> View </th>
+	</tr>
+      </thead>
+      <tbody>
+	{% for ds in dataspecs %}
+	<tr>
+	  <td> {{ ds.id }} </td>
+	  <td> {{ ds.name }} </td>
+	  <td> {{ ds.author }} </td>
+	  <td> {{ ds.date | date:"Y-m-d H:i:s" }} </td>
+	  <td>
+	    {% if ds.active %}
+	    <span class="accepted_status"> Yes </span>
+	    {% else %}
+	    <span class="retracted_status"> No </span>
+	    {% endif %}
+	  </td>
+	  <td>
+	    <a href="/mcds/viewdataspec/{{ ds.id }}"
+	       class="linkbutton rowbutton"> view </a>
+	  </td>
+	</tr>
+      </tbody>
+      {% endfor %}
+    </table>
+    <div class="posteditlink">
+      <a href="/mcds/uploaddataspec"
+	 class="linkbutton belowbutton"> upload data specification </a>
+    </div>
+  </div>
+  {% endif %}
+  
+</div>
+{% endblock %}

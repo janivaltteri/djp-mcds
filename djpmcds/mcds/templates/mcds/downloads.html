@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}MCDS: Downloads{% endblock %}
+
+{% block content %}
+<div class="header">
+  <h1> Downloads </h1>
+
+  <div class="navigation">
+    <a href="/mcds/main" class="linkbutton navbutton"> back to main </a>
+  </div>
+</div>
+
+<hr>
+
+<div class="content">
+
+  {% if messages %}
+  <div class="messagebox">
+    <ul class="messages">
+      {% for message in messages %}
+      <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <div class="download contentbox">
+    <h3 class="boxheader"> Download </h3>
+    <p> Download id: {{ download.id }} </p>
+    <p> Requested: {{ download.datetime | date:"Y-m-d H:i:s" }} </p>
+    <p> Measurement sets: {{ meas_count }} </p>
+    <p> Series: {{ series_count }} </p>
+
+    <p> Ready: <span id="ready_text"> {{ download.ready }} </span> </p>
+
+    <div class="downloader">
+      <p id="preparing_text"> Preparing: <span id="prepare_counter"> 0 </span> </p>
+      <a id="download_link" href="/mcds/downloaddatafile/{{ download.id }}"
+	 class="linkbutton belowbutton"> click to download </a>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+ 
+ let counter = 0;
+ let download_id = {{ download.id }};
+
+ $("#download_link").hide();
+ $("#preparing_text").show();
+
+ $(function() {
+   let ready = false;
+   let dl_poll_interval = 2 * 1000; // 2 sekuntia
+   let fetch_dl_status = function() {
+     counter += 1;
+     $('#prepare_counter').html(counter);
+     $.ajax({
+       type: "GET",
+       url: "/mcds/get_download_status/" + download_id,
+     }).done(function(msg) {
+       console.log(msg);
+       if (msg.ready) {
+	 console.log("processed");
+	 $('#ready_text').html("Yes");
+	 $("#download_link").show();
+	 $("#preparing_text").hide();
+	 ready = true;
+       } else {
+	 console.log("not processed");
+	 $('#ready_text').html("No");
+	 $("#download_link").hide();
+	 $("#preparing_text").show();
+	 ready = false;
+       }
+     }).fail(function() {
+       console.log('error');
+     }).always(function() {
+       if (!ready) {
+	 console.log('Waiting ' + (dl_poll_interval / 1000) + ' seconds');
+	 setTimeout(fetch_dl_status, dl_poll_interval);
+       }
+     });
+   }
+
+   fetch_dl_status();
+ });
+
+</script>
+{% endblock %}

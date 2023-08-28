@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}MCDS: Assign data specification{% endblock %}
+
+{% block content %}
+<div class="header">
+  <h1> Assign data specification </h1>
+
+  <div class="navigation">
+    <a href="/mcds/main" class="linkbutton navbutton"> back to main </a>
+    <a href="/mcds/manageproject/{{ project.name }}"
+       class="linkbutton navbutton"> back to manage project </a>
+  </div>
+</div>
+
+<hr>
+
+<div class="content">
+
+  {% if messages %}
+  <div class="messagebox">
+    <ul class="messages">
+      {% for message in messages %}
+      <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <div class="submitform contentbox">
+    <h2 class="boxheader"> Assign to: {{ project.name }} </h2>
+  
+    <form method="post" enctype="multipart/form-data">
+      {{ form.as_p }}
+      {% csrf_token %}
+      <div class="buttonbox">
+	<input type="submit" value="Submit">
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

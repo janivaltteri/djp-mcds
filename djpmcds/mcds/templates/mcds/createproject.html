@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}MCDS: Create project{% endblock %}
+
+{% block content %}
+<div class="header">
+  <h1> Create project </h1>
+
+  <div class="navigation">
+    <a href="/mcds/main" class="linkbutton navbutton"> back to main </a>
+  </div>
+</div>
+
+<hr>
+
+<div class="content">
+
+  {% if messages %}
+  <div class="messagebox">
+    <ul class="messages">
+      {% for message in messages %}
+      <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <div class="submitform contentbox">
+    <h2 class="boxheader"> Create project </h2>
+
+    <form method="post" enctype="multipart/form-data">
+      {{ form.as_p }}
+      {% csrf_token %}
+      <div class="buttonbox">
+	<input type="submit" value="Submit">
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

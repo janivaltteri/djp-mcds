@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}MCDS: View data specification{% endblock %}
+
+{% block content %}
+<div class="header">
+  <h1> View data specification </h1>
+
+  <div class="navigation">
+    <a href="/mcds/main" class="linkbutton navbutton"> back to main </a>
+  </div>
+</div>
+
+<hr>
+
+<div class="content">
+
+  {% if messages %}
+  <div class="messagebox">
+    <ul class="messages">
+      {% for message in messages %}
+      <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <div class="viewdataspec contentbox">
+
+    <div class="detailstext">
+      <div class="infopgroup">
+	<p> ID: {{ dataspec.id }} </p>
+	<p> Name: <b> {{ dataspec.name }} </b> </p>
+      </div>
+      <div class="infopgroup">
+	<p> Uploaded by: {{ dataspec.author }} </p>
+	<p> Date uploaded: {{ dataspec.date | date:"Y-m-d H:i:s" }} </p>
+      </div>
+      <div class="infopgroup">
+	<p> File: {{ dataspec.file }} </p>
+      </div>
+      <div class="infopgroup">
+	<p> Spec: {{ dataspec.spec | pprint }} </p>
+      </div>
+      <div class="infopgroup">
+	<p>
+	  Active:
+	  {% if dataspec.active %}
+	  <span class="accepted_status"> Yes </span>
+	  {% else %}
+	  <span class="retracted_status"> No </span>
+	  {% endif %}
+	</p>
+      </div>
+    </div>
+
+    <a href="/mcds/deactivatedataspec/{{ dataspec.id }}"
+       class="linkbutton belowbutton">
+      {% if dataspec.active %}
+      Deactivate
+      {% else %}
+      Activate
+      {% endif %}
+    </a>
+
+  </div>
+</div>
+{% endblock %}

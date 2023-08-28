@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}MCDS: Manage project{% endblock %}
+
+{% block content %}
+<h1> Manage project </h1>
+
+<div class="navigation">
+  <a href="/mcds/main" class="linkbutton navbutton"> back to main </a>
+</div>
+
+<hr>
+
+<div class="content">
+
+  {% if messages %}
+  <div class="messagebox">
+    <ul class="messages">
+      {% for message in messages %}
+      <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <div class="project contentbox">
+    <h3 class="boxheader"> Project information </h3>
+    <div class="infopgroup">
+      <p> Project ID: {{ project.id }} </p>
+      <p> Project name: <b> {{ project.name }} </b> </p>
+    </div>
+    <div class="infopgroup">
+      <p> Contact person: {{ project.contact_name }} </p>
+      <p> Contact email: {{ project.contact_email }} </p>
+    </div>
+    <div class="infopgroup">
+      <p> Added by: {{ project.author }} </p>
+      <p> Date added: {{ project.date | date:"Y-m-d H:i:s" }} </p>
+    </div>
+    <div class="infopgroup">
+      {% if project.active %}
+      <p> Active: <span class="accepted_status"> {{ project.active }} </span> </p>
+      {% else %}
+      <p> Active: <span class="retracted_status"> {{ project.active }} </span> </p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="assignedworkers contentbox">
+    <h3 class="boxheader"> Active assigned workers </h3>
+    <table>
+      <thead>
+	<tr>
+	  <th> Assignment ID </th>
+          <th> Name </th>
+          <th> Assigned by </th>
+          <th> Date </th>
+	  <th> Remove assignment </th>
+	</tr>
+      </thead>
+      <tbody>
+	{% for w in workers %}
+	{% if w.active %}
+	<tr>
+	  <td> {{ w.id }} </td>
+          <td> {{ w.worker }} </td>
+          <td> {{ w.author }} </td>
+          <td> {{ w.date | date:"Y-m-d H:i:s" }} </td>
+	  <td>
+	    <a href="/mcds/removeworker/{{ project.name }}/{{ w.id }}"
+	       class="linkbutton rowbutton"> remove </a>
+	  </td>
+	</tr>
+	{% endif %}
+	{% endfor %}
+      </tbody>
+    </table>
+    <div class="posteditlink">
+      <a href="/mcds/assignworker/{{ project.name }}"
+	 class="linkbutton belowbutton"> assign worker </a>
+    </div>
+  </div>
+
+  <div class="assigneddataspecs contentbox">
+    <h3 class="boxheader"> Assigned dataspecs </h3>
+    <table>
+      <thead>
+	<tr>
+	  <th> Assignment ID </th>
+	  <th> Name </th>
+	  <th> View </th>
+	  <th> Assigned by </th>
+	  <th> Date </th>
+	  <th> Remove assignment </th>
+	</tr>
+      </thead>
+      <tbody>
+	{% for ds in dataspecs %}
+	{% if ds.active %}
+	<tr>
+	  <td> {{ ds.id }} </td>
+	  <td> {{ ds.dataspec }} </td>
+	  <td>
+	    <a href="/mcds/viewdataspec/{{ ds.id }}"
+	       class="linkbutton view"> view </a>
+	  </td>
+	  <td> {{ ds.author }} </td>
+	  <td> {{ ds.date | date:"Y-m-d H:i:s" }} </td>
+	  <td>
+	    <a href="/mcds/removedataspec/{{ project.name }}/{{ ds.id }}"
+	       class="linkbutton rowbutton"> remove </a>
+	  </td>
+	</tr>
+	{% endif %}
+	{% endfor %}
+      </tbody>
+    </table>
+    <div class="posteditlink">
+      <a href="/mcds/assigndataspec/{{ project.name }}"
+	 class="linkbutton belowbutton">
+	assign data specification </a>
+    </div>
+  </div>
+
+  <div class="activateproject contentbox">
+    {% if project.active %}
+    <h3 class="boxheader"> Deactivate project </h3>
+    <a href="/mcds/deactivateproject/{{ project.name }}"
+       class="linkbutton belowbutton"> deactivate </a>
+    {% else %}
+    <h3 class="boxheader"> Activate project </h3>
+    <a href="/mcds/deactivateproject/{{ project.name }}"
+       class="linkbutton belowbutton"> activate </a>
+    {% endif %}
+  </div>
+
+  <div class="deactivatedworkers contentbox">
+    <h3 class="boxheader"> Previously assigned workers </h3>
+    <table>
+      <thead>
+	<tr>
+	  <th> Assignment ID </th>
+          <th> Name </th>
+          <th> Assigned by </th>
+          <th> Date </th>
+	</tr>
+      </thead>
+      <tbody>
+	{% for w in workers %}
+	{% if not w.active %}
+	<tr>
+	  <td> {{ w.id }} </td>
+          <td> {{ w.worker }} </td>
+          <td> {{ w.author }} </td>
+          <td> {{ w.date | date:"Y-m-d H:i:s" }} </td>
+	</tr>
+	{% endif %}
+	{% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="deactivateddataspecs contentbox">
+    <h3 class="boxheader"> Previously assigned dataspecs </h3>
+    <table>
+      <thead>
+	<tr>
+	  <th> Assignment ID </th>
+          <th> Name </th>
+          <th> Assigned by </th>
+          <th> Date </th>
+	</tr>
+      </thead>
+      <tbody>
+	{% for ds in dataspecs %}
+	{% if not ds.active %}
+	<tr>
+	  <td> {{ ds.id }} </td>
+          <td> {{ ds.dataspec }} </td>
+          <td> {{ ds.author }} </td>
+          <td> {{ ds.date | date:"Y-m-d H:i:s" }} </td>
+	</tr>
+	{% endif %}
+	{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  
+</div>
+{% endblock %}

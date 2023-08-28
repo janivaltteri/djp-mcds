@@ -1,0 +1,56 @@
+version: "3.9"
+
+services:
+
+  djpmcds:
+    restart: unless-stopped
+    build:
+      context: ./djpmcds
+      dockerfile: Dockerfile
+    command: python3 manage.py runserver 0.0.0.0:8000
+    volumes:
+      - /opt/djpmcds/files/datafiles:/opt/djpmcds/files/datafiles
+      - /opt/djpmcds/files/fieldforms:/opt/djpmcds/files/fieldforms
+      - /opt/djpmcds/files/dataspecs:/opt/djpmcds/files/dataspecs
+      - /opt/djpmcds/files/downloads:/opt/djpmcds/files/downloads
+    ports:
+      - "8000:8000"
+    expose:
+      - 8000
+    depends_on:
+      - db
+    env_file:
+      - .djpmcds.env.dev
+
+  db:
+    restart: unless-stopped
+    image: postgres:14-alpine
+    volumes:
+      - /opt/djpmcds/postgres:/var/lib/postgresql/data/
+    env_file:
+      - .postgres.env.dev
+
+  rabbitmq:
+    restart: unless-stopped
+    image: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  celery:
+    restart: unless-stopped
+    build:
+      context: ./djpmcds
+    command: celery -A djpmcds worker -l info
+    volumes:
+      - /opt/djpmcds/files/datafiles:/opt/djpmcds/files/datafiles
+      - /opt/djpmcds/files/fieldforms:/opt/djpmcds/files/fieldforms
+      - /opt/djpmcds/files/dataspecs:/opt/djpmcds/files/dataspecs
+      - /opt/djpmcds/files/downloads:/opt/djpmcds/files/downloads
+      - /opt/djpmcds/celery:/opt/djpmcds/celery
+    depends_on:
+      - djpmcds
+      - db
+      - rabbitmq
+    env_file:
+      - .celery.env.dev

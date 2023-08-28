@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}MCDS: View project data{% endblock %}
+
+{% block content %}
+<div class="header">
+  <h1> View project data </h1>
+
+  <div class="navigation">
+    <a href="/mcds/main" class="linkbutton navbutton"> back to main </a>
+  </div>
+</div>
+
+<hr>
+
+<div class="content">
+
+  {% if messages %}
+  <div class="messagebox">
+    <ul class="messages">
+      {% for message in messages %}
+      <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <div class="measurements contentbox">
+    <h3 class="boxheader"> Measurement sets </h3>
+    <table>
+      <thead>
+	<tr>
+	  <th> Upload ID </th>
+	  <th> Date uploaded </th>
+	  <th> <b> Measurement date </b> </th>
+	  <th> Siteids </th>
+	  <th> Status </th>
+	  <th> View </th>
+	</tr>
+      </thead>
+      <tbody>
+	{% for m in measurements %}
+	<tr>
+	  <td> {{ m.id }} </td>
+	  <td> {{ m.date | date:"Y-m-d H:i:s" }} </td>
+	  <td> <b> {{ m.measure_date | date:"Y-m-d" }} </b> </td>
+	  <td> {{ m.siteids }} </td>
+	  <td> {{ m.status }} </td>
+	  <td>
+	    <a href="/mcds/viewpointdata/{{ project.name }}/{{ m.id }}"
+	       class="linkbutton rowbutton"> view </a>
+	  </td>
+	</tr>
+	<tr>
+	  <td> &nbsp; </td>
+	  <td> <i> {{ m.comment }} </i> </td>
+	  <td> &nbsp; </td>
+	  <td> &nbsp; </td>
+	  <td> &nbsp; </td>
+	  <td> &nbsp; </td>
+	</tr>
+	{% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+{% endblock %}

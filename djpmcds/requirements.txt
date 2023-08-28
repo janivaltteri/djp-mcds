@@ -1,0 +1,8 @@
+Django
+celery
+openpyxl
+numpy
+scipy
+pandas
+gunicorn
+psycopg2-binary

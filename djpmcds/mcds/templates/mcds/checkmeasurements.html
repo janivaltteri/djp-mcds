@@ -1,0 +1,329 @@
+{% extends "base.html" %}
+
+{% block title %}MCDS: Check measurements{% endblock %}
+
+{% block content %}
+<div class="header">
+  <h1> Check measurements </h1>
+
+  <div class="navigation">
+    <a href="/mcds/main" class="linkbutton navbutton"> back to main </a>
+    <a href="/mcds/uploadmeasurements/{{ project.name }}"
+       class="linkbutton navbutton"> back to uploads </a>
+  </div>
+</div>
+
+<hr>
+
+<div class="content">
+
+  {% if messages %}
+  <div class="messagebox">
+    <ul class="messages">
+      {% for message in messages %}
+      <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <div class="checkmeasurements contentbox">
+    <h2 class="boxheader">
+      Check measurements ID {{ meas.id }} in project {{ project.name }}
+    </h2>
+
+    <div class="detailstext">
+      <div class="infopgroup">
+	<p> ID: {{ meas.id }} </p>
+	<p> Submitted by: {{ meas.measurer }} </p>
+	<p> Project: {{ meas.project.name }} </p>
+      </div>
+      <div class="infopgroup">
+	<p>
+	  Dataspec: {{ meas.dataspec }}
+	  <a href="/mcds/viewdataspec/{{ meas.dataspec.id }}"
+	     class="linkbutton rowbutton"> view </a>
+	</p>
+      </div>
+      <div class="infopgroup">
+	<p> Measure date: {{ meas.measure_date | date:"Y-m-d" }} </p>
+	<p> Upload date: {{ meas.date | date:"Y-m-d H:i:s" }} </p>
+      </div>
+      <div class="infopgroup">
+	<p>
+	  Datafile: {{ meas.datafile }}
+	  <a href="/mcds/downloadoriginaldf/{{ project.name }}/{{ meas.id }}"
+	     class="linkbutton rowbutton"> download </a>
+	</p>
+	<p> Datafile original name: {{ meas.dataorigname }} </p>
+	<p>
+	  Fieldform: {{ meas.fieldform }}
+	  <a href="/mcds/downloadoriginalff/{{ project.name }}/{{ meas.id }}"
+	     class="linkbutton rowbutton"> download </a>
+	</p>
+	<p> Fieldform original name: {{ meas.fieldorigname }} </p>
+      </div>
+      <div class="infopgroup">
+	<p> Status: <span id="mstatus"> {{ meas.status }} </span> </p>
+	<p> Datafile status: <span id="dstatus"> {{ meas.datastatus }} </span> </p>
+	<p> Fieldform status: <span id="fstatus"> {{ meas.fieldstatus }} </span> </p>
+	<p> Valid: <span id="validtext"> {{ meas.valid }} </span> </p>
+	<p> Processed: <span id="proc_status"> {{ meas.processed }} </span> </p>
+      </div>
+      <div class="infopgroup">
+	<p> Errors:
+	  <span id="errorstext" class="bad_status">
+	    {{ meas.errors }}
+	  </span>
+	</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="measactions contentbox">
+    <h3> Actions </h3>
+    <a href="/mcds/viewpointdata/{{ project.name }}/{{ meas.id }}"
+       class="linkbutton belowbutton"> view data </a>
+    <a href="/mcds/removemeasurements/{{ project.name }}/{{ meas.id }}"
+       class="linkbutton belowbutton" id="btn_remove"> remove </a>
+    <a href="/mcds/acceptmeasurements/{{ project.name }}/{{ meas.id }}"
+       class="linkbutton belowbutton" id="btn_accept"> accept </a>
+    <a href="/mcds/retractmeasurements/{{ project.name }}/{{ meas.id }}"
+       class="linkbutton belowbutton" id="btn_retract"> retract </a>
+    <a href="/mcds/unprocessmeasurements/{{ project.name }}/{{ meas.id }}"
+       class="linkbutton belowbutton" id="btn_unprocess"> unprocess </a>
+  </div>
+
+  <!--
+  <div class="meascheck contentbox">
+    <h4 class="boxheader"> Fieldform parsing status </h4>
+    <p> Fieldform read: <span id="ffok_area"> waiting... </span> </p>
+    <p> Fieldform errors: <span id="fferr_area"> waiting... </span> </p>
+    <p> Fieldform warnings: <span id="ffwarn_area"> waiting... </span> </p>
+  </div>
+  -->
+
+  <div class="meascheck contentbox">
+    <h3 class="boxheader"> Submission contents </h3>
+    <p id="db_wait_counter">
+      Waiting for database:
+      <span id="proc_counter_span"> waiting... </span>
+    </p>
+    <table id="fftable">
+      <tr>
+	<th> Date </th>
+	<th> Site </th>
+	<th> Subsite </th>
+	<th> Point </th>
+	<th> Start time </th>
+	<th> End time </th>
+	<th> Duration (s) </th>
+	<th> Start temp </th>
+	<th> End temp </th>
+	<th> Chamber area </th>
+	<th> Chamber volume </th>
+	<th> -Gas- </th>
+	<th> Unit </th>
+	<th> Datapoints (#) </th>
+      </tr>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+
+ let counter = 0;
+ let meas_id = {{ meas.id }};
+
+ let set_colours = function() {
+   let valid_text = $('#validtext').text();
+   if (valid_text.includes("True")) {
+     $('#validtext').removeClass('bad_status').addClass('good_status');
+   }
+   if (valid_text.includes("False")) {
+     $('#validtext').removeClass('good_status').addClass('bad_status');
+   }
+   if (valid_text.includes("true")) {
+     $('#validtext').removeClass('bad_status').addClass('good_status');
+   }
+   if (valid_text.includes("false")) {
+     $('#validtext').removeClass('good_status').addClass('bad_status');
+   }
+   let dstatus_text = $('#dstatus').text();
+   if (dstatus_text.includes("valid")) {
+     $('#dstatus').removeClass('bad_status').addClass('good_status');
+   }
+   if (dstatus_text.includes("invalid")) {
+     $('#dstatus').removeClass('good_status').addClass('bad_status');
+   }
+   let fstatus_text = $('#fstatus').text();
+   if (fstatus_text.includes("valid")) {
+     $('#fstatus').removeClass('bad_status').addClass('good_status');
+   }
+   if (fstatus_text.includes("invalid")) {
+     $('#fstatus').removeClass('good_status').addClass('bad_status');
+   }
+   let mstatus_text = $('#mstatus').text();
+   if (mstatus_text.includes("submitted")) {
+     $('#mstatus').removeClass().addClass('submitted_status');
+   }
+   if (mstatus_text.includes("accepted")) {
+     $('#mstatus').removeClass().addClass('accepted_status');
+   }
+   if (mstatus_text.includes("retracted")) {
+     $('#mstatus').removeClass().addClass('retracted_status');
+   }
+ }
+
+ let set_visibilities = function() {
+   let mstatus_text = $('#mstatus').text();
+   if (mstatus_text.includes("accepted")) {
+     $('#btn_accept').hide();
+     $('#btn_remove').hide();
+     $('#btn_retract').show();
+     $('#btn_unprocess').hide();
+   } else if (mstatus_text.includes("retracted")) {
+     $('#btn_accept').show();
+     $('#btn_remove').show();
+     $('#btn_retract').hide();
+     $('#btn_unprocess').hide();
+   } else if (mstatus_text.includes("submitted")) {
+     $('#btn_accept').show();
+     $('#btn_remove').show();
+     $('#btn_retract').hide();
+     $('#btn_unprocess').show();
+   }
+ }
+
+ let fetch_data = function() {
+   console.log("fetch_data called");
+   let ajax_proc_url = "/mcds/checksubmission/" + meas_id;
+   $.ajax({
+     type: "GET", url: ajax_proc_url, dataType: "json",
+     data: { csrfmiddlewaretoken: "{{ csrf_token }}", },
+     headers: {'X-CSRFToken': '{{ csrf_token }}'},
+     success: function(data) {
+       d = data.data;
+       console.log(data);
+       for(let i = 0; i < d.length; i++){
+	 let l = '<tr> <td> ' + d[i].date + ' </td> <td> ' + d[i].siteid + ' </td> <td> ' +
+		 d[i].subsiteid + ' </td> <td> ' + d[i].point + ' </td> <td> ' +
+		 d[i].start_time + ' </td> <td> ' + d[i].end_time + ' </td> <td> ' +
+		 d[i].duration + ' </td> <td> ' + d[i].start_temp + ' </td> <td> ' +
+		 d[i].end_temp + ' </td> <td> ' + d[i].area + ' </td> <td> ' +
+		 d[i].volume + ' </td> <td> ' + d[i].gas + ' </td> <td> ' +
+		 d[i].unit + ' </td> <td> ' + d[i].values.length +
+		 ' </td> </tr>';
+	 $('#fftable').append(l);
+       }
+       $('#mstatus').text(data.meas.status);
+       $('#dstatus').text(data.meas.datastatus);
+       $('#fstatus').text(data.meas.fieldstatus);
+       $('#errorstext').text(data.meas.errors);
+       $('#validtext').text(data.meas.valid);
+       set_colours();
+       set_visibilities();
+       $('#db_wait_counter').hide();
+     }
+   });
+ }
+
+ $(function() {
+   let processed = false;
+   let proc_poll_interval = 2 * 1000; // 2 sekuntia
+   let fetch_proc_status = function() {
+     counter += 1;
+     $('#proc_counter_span').html(counter);
+     $.ajax({
+       type: "GET",
+       url: "/mcds/get_processing_status/" + meas_id,
+     }).done(function(msg) {
+       console.log(msg);
+       if (msg.processed) {
+	 console.log("processed");
+	 $('#proc_status').text("Yes");
+	 processed = true;
+	 fetch_data();
+       } else {
+	 console.log("not processed");
+	 $('#proc_status').text("No");
+	 processed = false;
+       }
+     }).fail(function() {
+       console.log('error');
+     }).always(function() {
+       if (!processed) {
+	 console.log('Waiting ' + (proc_poll_interval / 1000) + ' seconds');
+	 setTimeout(fetch_proc_status, proc_poll_interval);
+       }
+     });
+   }
+
+   set_colours();
+   set_visibilities();
+   fetch_proc_status();
+ });
+ 
+ $(document).ready(function(){
+   
+   let meas_id = {{ meas.id }};
+   let meas_status = "{{ meas.status }}";
+
+   if(meas_status == "submitted"){
+     console.log("is submitted");
+     let ajax_get_data_url = "/mcds/getdata";
+   }
+
+   let ajax_proc_url = "/mcds/checksubmission/" + meas_id;
+
+   /*
+      $.ajax({
+      type: "GET", url: ajax_proc_url, dataType: "json",
+      data: {
+      csrfmiddlewaretoken: "{{ csrf_token }}",
+      },
+      headers: {'X-CSRFToken': '{{ csrf_token }}'},
+      success: function(data) {
+      d = data.data;
+      console.log(d);
+      for(let i = 0; i < d.length; i++){
+      let ffok = data.ffok;
+      $('#ffok_area').html(ffok);
+      $('#fferr_area').html(data.fferr);
+      $('#ffwarn_area').html(data.ffwarn);
+      $('#readfrom_area').html(data.from);
+      let l = '<tr> <td> ' + d[i].date + ' </td> <td> ' + d[i].siteid + ' </td> <td> ' +
+      d[i].subsiteid + ' </td> <td> ' + d[i].point + ' </td> <td> ' +
+      d[i].start_time + ' </td> <td> ' + d[i].end_time + ' </td> <td> ' +
+      d[i].duration + ' </td> <td> ' + d[i].gas + ' </td> <td> ' +
+      d[i].unit + ' </td> <td> ' + d[i].values.length +
+      ' </td> </tr>';
+      $('#fftable').append(l);
+      }
+      }
+      });
+    */
+
+   let ajax_status_url = "/mcds/get_processing_status/" + meas_id;
+
+   /*
+   $.ajax({
+     type: "GET", url: ajax_status_url, dataType: "json",
+     data: { csrfmiddlewaretoken: "{{ csrf_token }}", },
+     headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+     success: function(data) {
+       console.log(data);
+       if (data.processed) {
+	 console.log("on");
+       } else {
+	 console.log("ei");
+       }
+     }
+   });
+   */
+
+ });
+</script>
+{% endblock %}

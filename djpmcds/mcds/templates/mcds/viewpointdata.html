@@ -1,0 +1,477 @@
+{% extends "base.html" %}
+
+{% block title %}MCDS: View individual time-series{% endblock %}
+
+{% block content %}
+<div class="header">
+  <h1> Viev individual time-series </h1>
+
+  <div class="navigation">
+    <a href="/mcds/main" class="linkbutton navbutton"> back to main </a>
+    <a href="/mcds/viewprojectdata/{{ project.name }}"
+       class="linkbutton navbutton"> back to project data view </a>
+    <a href="/mcds/checkmeasurements/{{ project.name }}/{{ meas.id }}"
+       class="linkbutton navbutton"> back to check measurements </a>
+  </div>
+</div>
+
+<hr>
+
+<div class="content">
+
+  {% if messages %}
+  <div class="messagebox">
+    <ul class="messages">
+      {% for message in messages %}
+      <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <div class="viewmeasdata contentbox">
+    <h3 class="boxheader"> General information </h3>
+    <p> Measurement date: <b> {{ meas.measure_date | date:"Y-m-d" }} </b>
+      (entered at submission)
+    </p>
+    <p> Submission date: {{ meas.date | date:"Y-m-d H:i:s" }} UTC </p>
+    <p> Site IDs: {{ meas.siteids }} </p>
+    <p> Status: {{ meas.status }} </p>
+  </div>
+
+  <div class="viewpointdata contentbox">
+    <h3 class="boxheader"> Contents </h3>
+    <div id="place">
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js" integrity="sha512-M7nHCiNUOwFt6Us3r8alutZLm9qMt4s9951uo8jqO4UwJ1hziseL6O3ndFyigx6+LREfZqnhHxYjKRJ8ZQ69DQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<script>
+ $('document').ready( () => {
+
+   const meas_id = {{ meas.id }};
+   const interval = {{ interval }};
+
+   console.log("interval " + interval);
+   
+   const ajax_proc_url = "/mcds/get_series_data/" + meas_id;
+   const ajax_get_fluxes_url = "/mcds/get_fluxes/" + meas_id;
+
+   const co2_point_colour = '#ff3585'
+   const ch4_point_colour = '#3585ff'
+   const n2o_point_colour = '#ff8535'
+   const margin = {top: 20, right: 15, bottom: 60, left: 70};
+   const outer_width = 600;
+   const outer_height = 400;
+   const width = outer_width - margin.left - margin.right;
+   const height = outer_height - margin.top - margin.bottom;
+
+   const ypad = 5;
+
+   const rnd = 8;
+
+   let xf = [];
+   let yf = [];
+   let x_max_values = [];
+   let svg_areas = [];
+
+   let do_things = function(d,id) {
+
+     // header
+     let str0 = 'Measurement: ' + d.date + ' ' + d.siteid + ' ' + d.subsiteid + ' ' + d.point
+     let str1;
+     if (d.gas == "co2") {
+       str1 = " -- <b> <span class='co2_text'> " + "CO2" + " </span> </b> -- "
+     } else if (d.gas == "ch4") {
+       str1 = " -- <b> <span class='ch4_text'> " + "CH4" + " </span> </b> -- "
+     } else if (d.gas == "n2o") {
+       str1 = " -- <b> <span class='n2o_text'> " + "N2O" + " </span> </b> -- "
+     } else {
+       str1 = " -- " + d.gas + " -- "
+     }
+     let str2 = d.start_time + ' to ' + d.end_time
+     $("#place").append( $("<div>").addClass("seriesheader").append( $("<p>").html(str0 + str1 + str2) ) );
+     $("#place").append(
+       $("<div>").addClass("seriesarea").attr("id","area" + id)
+	 .append( $("<div>").addClass("seriesinfo").addClass("seriesauto").attr("id","auto" + id) )
+	 .append( $("<div>").addClass("seriesinfo").addClass("seriesflux").attr("id","flux" + id) )
+	 .append( $("<div>").addClass("seriesfigure").attr("id","figure" + id) )
+     );
+
+     // info and operations boxes
+     $("#auto" + id).append( $("<p>").text("Autotrimmed") );
+
+     $("#auto" + id).append( $("<div>").addClass("info_area").html("Flux (g m-2 h-1): <br>").append( $("<span>").attr("id","autoflux_area" + id).attr("data-sid",d.id) ) );
+     $("#auto" + id).append( $("<div>").addClass("info_area").html("Residual mean: <br>").append( $("<span>").attr("id","autoresid_area" + id).attr("data-sid",d.id) ) );
+     $("#auto" + id).append( $("<div>").addClass("info_area").html("Slope: <br>").append( $("<span>").attr("id","autoslope_area" + id).attr("data-sid",d.id) ) );
+     $("#auto" + id).append( $("<div>").addClass("info_area").html("Volume: <br>").append( $("<span>").attr("id","autovolume_area" + id).attr("data-sid",d.id) ) );
+     $("#auto" + id).append( $("<div>").addClass("info_area").html("Area: <br>").append( $("<span>").attr("id","autoarea_area" + id).attr("data-sid",d.id) ) );
+
+     //$("#auto" + id).append( $("<p>").text("Flux (g m-2 h-1):") );
+     //$("#auto" + id).append( $("<span>").attr("id","flux_auto_area" + id) );
+     //$("#auto" + id).append( $("<p>").text("Residual mean:") );
+     //$("#auto" + id).append( $("<span>").attr("id","resid_auto_area" + id) );
+
+     let actb = $("<button>").addClass("fluxbutton").addClass("calc_flux").attr("id","calc_flux" + id).attr("data-id",id).attr("data-sid",d.id).text("Activate");
+     let remb = $("<button>").addClass("fluxbutton").addClass("remove_flux").attr("id","remove_flux" + id).attr("data-id",id).attr("data-sid",d.id).text("Remove");
+     $("#flux" + id).append( $("<p>").html("Manual: ").append(actb).append(remb) );
+
+     $("#flux" + id).append( $("<div>").addClass("info_area").html("Flux (g m-2 h-1): <br>").append( $("<span>").attr("id","flux_area" + id).attr("data-sid",d.id) ) );
+     $("#flux" + id).append( $("<div>").addClass("info_area").html("Residual mean: <br>").append( $("<span>").attr("id","resid_area" + id).attr("data-sid",d.id) ) );
+
+     let pad_min = -1 * d.pad_head
+     let pad_max = -1 * d.pad_tail
+     let trmb = $("<button>").addClass("trimbutton").addClass("trim_flux").attr("id","trim_flux" + id).attr("data-sid",d.id).attr("data-id",id).text("trim");
+     $("#flux" + id).append( $("<div>").addClass("info_area").attr("id","trim_info_area" + id)
+				       .html("Trimming: <br>")
+				       .append( $("<input>").addClass("trim_entry").attr("type","number").attr("id","trim_head_entry" + id)
+							    .attr("pattern","\d+").attr("step",1).attr("min",pad_min).attr("max",90).val(0) )
+				       .append("head <br>")
+				       .append( $("<input>").addClass("trim_entry").attr("type","number").attr("id","trim_tail_entry" + id)
+							    .attr("pattern","\d+").attr("step",1).attr("min",pad_max).attr("max",90).val(0) )
+				       .append("tail <br>")
+				       .append(trmb) );
+     
+     //$("#flux" + id).append( $("<div class='info_area'>").html("Trimming: <br> <input type='number' id='trim_head_entry" + id + "' data-sid='" + d.id + "' class='trim_entry' value='0' step='1' pattern='\d+' min='0' max='90' /> head <br> <input type='number' id='trim_tail_entry" + id + "' data-sid='" + d.id + "' class='trim_entry' value='0' step='1' pattern='\d+' min='0' max='90' /> tail <br>").append( trmb ) );
+
+     $("#flux" + id).append( $("<div>").addClass("info_area").attr("id","validation_area" + id)
+				       .append( $("<span>").html("Validation: <br>") )
+				       .append( $("<button>").addClass("acc_btn").attr("id","acc_btn" + id).attr("data-sid",d.id).attr("data-id",id).text("Accept") )
+				       .append( $("<button>").addClass("rej_btn").attr("id","rej_btn" + id).attr("data-sid",d.id).attr("data-id",id).text("Reject") ) );
+
+     // modify data
+     thing = [];
+     for (let i = 0; i < d.values.length; i++) {
+       obj = { time: i * interval, value: d.values[i] };
+       thing.push(obj);
+     }
+
+     // drawing area
+     let base = d3.select('#figure' + id);
+     const svg_area = base.append('svg:svg')
+			  .attr('width', width + margin.left + margin.right)
+			  .attr('height', height + margin.top + margin.bottom)
+			  .append("g")
+			  .attr("transform",
+				"translate(" + margin.left + "," + margin.top + ")");
+
+     // x-axis
+     let xmax = d.values.length * interval + 1;
+     let x = d3.scaleLinear().domain([0, xmax]).range([0, width]);
+     let x_axis = d3.axisBottom(x);
+     svg_area.append('g').attr('transform', `translate(0, ${height})`).call(x_axis);
+     xf.push(x);
+     x_max_values.push(xmax);
+
+     // y-axis
+     let ymin = d3.min(d.values);
+     let ymax = d3.max(d.values);
+     let y = d3.scaleLinear().domain([ymin - ypad, ymax + ypad]).range([height, 0]);
+     let y_axis = d3.axisLeft(y);
+     svg_area.append('g').call(y_axis);
+     yf.push(y);
+
+     // scatter points
+     let point_colour;
+     if (d.gas == "co2") {
+       point_colour = co2_point_colour
+     } else if (d.gas == "ch4") {
+       point_colour = ch4_point_colour
+     } else if (d.gas == "n2o") {
+       point_colour = n2o_point_colour
+     } else {
+       point_colour = '#555555'
+     }
+     svg_area.selectAll("whatever").data(thing).enter().append("circle")
+	     .attr("cx", function(j){ return x(j.time) })
+	     .attr("cy", function(j){ return y(j.value) })
+	     .attr("r", 2)
+	     .style("fill",point_colour);
+
+     // todo: pad-lines also need to use the interval
+
+     // pad vertical lines
+     let pad_head_id = "pad_head_line" + id;
+     svg_area.append('line').style("stroke", "black")
+	     .style("stroke-width", 1.5).attr("id", pad_head_id)
+	     .attr("x1", x(d.pad_head)).attr("y1", y(ymin - ypad))
+	     .attr("x2", x(d.pad_head)).attr("y2", y(ymax + ypad));
+     let pad_tail_id = "pad_tail_line" + id;
+     svg_area.append('line').style("stroke", "black")
+	     .style("stroke-width", 1.5).attr("id", pad_tail_id)
+	     .attr("x1", x(xmax - d.pad_tail)).attr("y1", y(ymin - ypad))
+	     .attr("x2", x(xmax - d.pad_tail)).attr("y2", y(ymax + ypad));
+
+     let trim_head_id = "trim_head_line" + id;
+     svg_area.append('line').style("stroke", "gray").style("stroke-dasharray", ("8,6"))
+	     .style("stroke-width", 1.5).attr("id", trim_head_id)
+	     .attr("x1", x(d.pad_head)).attr("y1", y(ymin - ypad))
+	     .attr("x2", x(d.pad_head)).attr("y2", y(ymax + ypad));
+     let trim_tail_id = "trim_tail_line" + id;
+     svg_area.append('line').style("stroke", "gray").style("stroke-dasharray", ("8,6"))
+	     .style("stroke-width", 1.5).attr("id", trim_tail_id)
+	     .attr("x1", x(xmax - d.pad_tail)).attr("y1", y(ymin - ypad))
+	     .attr("x2", x(xmax - d.pad_tail)).attr("y2", y(ymax + ypad));
+
+     let slope_id = "slope" + id;
+     if (d.pflux != "none") {
+       svg_area.append('line').style("stroke", "#00cc99")
+	       .style("stroke-width", 1.75).attr("id", slope_id)
+	       .attr("x1", x(0))
+	       .attr("y1", y(d.pflux.intercept))
+	       .attr("x2", x(xmax))
+	       .attr("y2", y(d.pflux.intercept + xmax * d.pflux.slope));
+     } else {
+       svg_area.append('line').style("stroke", "#00cc99")
+	       .style("stroke-width", 1.75).attr("id", slope_id)
+	       .attr("x1", x(0))
+	       .attr("y1", y(0))
+	       .attr("x2", x(xmax))
+	       .attr("y2", y(0));
+       $("#slope" + id).hide()
+     }
+
+     svg_areas.push(svg_area);
+
+     // set flux values
+     if (d.pflux == "none") {
+       $("#remove_flux" + id).hide();
+       $("#flux_area" + id).text("NA");
+       $("#resid_area" + id).text("NA");
+       $("#acc_btn" + id).hide();
+       $("#trim_info_area" + id).hide();
+       $("#validation_area" + id).hide();
+     } else {
+       $("#calc_flux" + id).hide();
+       $("#trim_head_entry" + id).val(d.pflux.trim_head);
+       $("#trim_tail_entry" + id).val(d.pflux.trim_tail);
+       $("#trim_head_line" + id).attr("x1",x(d.pad_head + d.pflux.trim_head * interval))
+				.attr("x2",x(d.pad_head + d.pflux.trim_head * interval))
+       $("#trim_tail_line" + id).attr("x1",x(xmax - d.pad_tail - d.pflux.trim_tail * interval))
+				.attr("x2",x(xmax - d.pad_tail - d.pflux.trim_tail * interval))
+       if (d.pflux.bad) {
+	 $("#flux_area" + id).text("bad");
+	 $("#resid_area" + id).text("bad");
+	 $("#trim_info_area" + id).hide();
+	 $("#rej_btn" + id).hide();
+       } else {
+	 $("#flux_area" + id).text(d.pflux.flux.toFixed(rnd));
+	 $("#resid_area" + id).text(d.pflux.resid.toFixed(rnd));
+	 $("#acc_btn" + id).hide();
+       }
+     }
+
+     if (d.aflux == "none") {
+       $("#autoflux_area" + id).text("NA");
+       $("#autoresid_area" + id).text("NA");
+       $("#autoslope_area" + id).text("NA");
+       $("#autoarea_area" + id).text("NA");
+       $("#autovolume_area" + id).text("NA");
+     } else {
+       $("#autoflux_area" + id).text(d.aflux.flux.toFixed(rnd));
+       let resid = d.aflux.resid;
+       let resid_class;
+       if (resid > 1.0) {
+	 resid_class = "resid_verybad"
+       } else if (resid > 0.5) {
+	 resid_class = "resid_bad"
+       } else {
+	 resid_class = "resid_ok"
+       }
+       $("#autoresid_area" + id).append("<span>").addClass(resid_class).text(resid.toFixed(rnd));
+       $("#autoslope_area" + id).text(d.aflux.slope.toFixed(rnd));
+       $("#autoarea_area" + id).text(d.area.toFixed(rnd));
+       $("#autovolume_area" + id).text(d.volume.toFixed(rnd));
+     }
+
+   }
+
+   let set_buttons = function() {
+     $(".calc_flux").click(function() {
+       calculate_flux($(this).data('sid'),$(this).data('id'));
+     });
+     $(".remove_flux").click(function() {
+       remove_flux($(this).data('sid'),$(this).data('id'));
+     });
+     $(".acc_btn").click(function() {
+       mark_good($(this).data('sid'),$(this).data('id'));
+     });
+     $(".rej_btn").click(function() {
+       mark_bad($(this).data('sid'),$(this).data('id'));
+     });
+     $(".trim_flux").click(function() {
+       let sid = $(this).data('sid')
+       let lid = $(this).data('id')
+       let th = parseInt($("#trim_head_entry" + lid).val());
+       let tt = parseInt($("#trim_tail_entry" + lid).val());
+       trim_flux(sid,lid,th,tt);
+     });
+   }
+
+   let calculate_flux = function(sid,lid) {
+     console.log("pressed calculate " + sid);
+     let calculate_flux_url = "/mcds/calculate_flux/" + sid;
+     $.ajax({
+       type: "GET", url: calculate_flux_url, dataType: "json",
+       data: { csrfmiddlewaretoken: "{{ csrf_token }}", },
+       headers: {'X-CSRFToken': '{{ csrf_token }}'},
+       success: function(data) {
+	 console.log(data);
+	 let status = data.status.substring(0, 2);
+	 if (status == "ok"){
+	   $('#flux_area' + lid).text(data.lflux);
+	   $('#resid_area' + lid).text(data.resid);
+	   let xfun = xf[lid];
+	   let yfun = yf[lid];
+	   let xmax = x_max_values[lid];
+	   $('#slope' + lid).attr("x1",xfun(0))
+			    .attr("y1",yfun(data.intercept))
+			    .attr("x2",xfun(xmax))
+			    .attr("y2",yfun(data.intercept + xmax * data.slope));
+	 } else if (status == "er"){
+	   $('#flux_area' + lid).text("error");
+	   $('#resid_area' + lid).text("error");
+	 }
+	 $("#slope" + lid).show();
+	 $("#calc_flux" + lid).hide();
+	 $("#remove_flux" + lid).show();
+	 $("#trim_info_area" + lid).show();
+	 $("#validation_area" + lid).show();
+       }
+     });
+   }
+
+   let remove_flux = function(sid,lid) {
+     console.log("pressed remove " + sid);
+     let remove_flux_url = "/mcds/remove_flux/" + sid;
+     $.ajax({
+       type: "GET", url: remove_flux_url, dataType: "json",
+       data: { csrfmiddlewaretoken: "{{ csrf_token }}", },
+       headers: {'X-CSRFToken': '{{ csrf_token }}'},
+       success: function(data) {
+	 console.log(data);
+	 console.log(lid);
+	 let status = data.status.substring(0, 2);
+	 if (status == "ok"){
+	   $('#flux_area' + lid).text("NA");
+	   $('#resid_area' + lid).text("NA");
+	   $('#trim_head_entry' + lid).val(0);
+	   $('#trim_tail_entry' + lid).val(0);
+	   // todo: remove trim lines and zero trim entry values
+	 } else if (status == "er"){
+	   $('#flux_area' + lid).text("error");
+	   $('#resid_area' + lid).text("error");
+	 }
+	 $("#slope" + lid).hide();
+	 $("#calc_flux" + lid).show();
+	 $("#remove_flux" + lid).hide();
+	 $('#trim_info_area' + lid).hide();
+	 $("#validation_area" + lid).hide();
+       }
+     });
+   }
+
+   let trim_flux = function(sid,lid,thead,ttail) {
+     console.log("pressed trim " + sid + " head " + thead + " tail " + ttail);
+     let trim_flux_url = "/mcds/trim_flux/";
+     $.ajax({
+       type: "POST", url: trim_flux_url,
+       contentType: 'application/json;charset=UTF-8',
+       data: JSON.stringify({'series_id': sid,
+			     'trim_head': thead,
+			     'trim_tail': ttail}),
+       headers: {'X-CSRFToken': '{{ csrf_token }}'},
+       success: function(data) {
+	 console.log(data);
+	 let status = data.status;
+	 if (status.substring(0,2) == "ok"){
+	   let xfun = xf[lid];
+	   let yfun = yf[lid];
+	   let xmax = x_max_values[lid];
+	   let trim_head_line = d3.select("#trim_head_line" + lid);
+	   trim_head_line.attr("x1",xfun(data.pad_head + data.trim_head * interval))
+			 .attr("x2",xfun(data.pad_head + data.trim_head * interval))
+	   let trim_tail_line = d3.select("#trim_tail_line" + lid);
+	   trim_tail_line.attr("x1",xfun(xmax - data.pad_tail - data.trim_tail * interval))
+			 .attr("x2",xfun(xmax - data.pad_tail - data.trim_tail * interval))
+	   $('#slope' + lid).attr("x1",xfun(0))
+			 .attr("y1",yfun(data.intercept))
+			 .attr("x2",xfun(xmax))
+			 .attr("y2",yfun(data.intercept + xmax * data.slope));
+	   $('#flux_area' + lid).text(data.lflux);
+	   $('#resid_area' + lid).text(data.resid);
+	 }else{
+	   
+	 }
+       }
+     });
+   }
+
+   let mark_good = function(sid,lid) {
+     console.log("pressed mark_good " + sid);
+     let mark_good_url = "/mcds/mark_flux_good/" + sid;
+     $.ajax({
+       type: "GET", url: mark_good_url, dataType: "json",
+       data: { csrfmiddlewaretoken: "{{ csrf_token }}", },
+       headers: {'X-CSRFToken': '{{ csrf_token }}'},
+       success: function(data) {
+	 console.log(data);
+	 console.log("mark good " + sid + " " + lid);
+	 $("#flux_area" + lid).text(data.flux);
+	 $("#resid_area" + lid).text(data.resid);
+	 $("#trim_info_area" + lid).show();
+	 $("#acc_btn" + lid).hide();
+	 $("#rej_btn" + lid).show();
+       }
+     });
+   }
+
+   let mark_bad = function(sid,lid) {
+     console.log("pressed mark_bad " + sid);
+     let mark_bad_url = "/mcds/mark_flux_bad/" + sid;
+     $.ajax({
+       type: "GET", url: mark_bad_url, dataType: "json",
+       data: { csrfmiddlewaretoken: "{{ csrf_token }}", },
+       headers: {'X-CSRFToken': '{{ csrf_token }}'},
+       success: function(data) {
+	 console.log(data);
+	 console.log("mark bad " + sid + " " + lid);
+	 $("#flux_area" + lid).text("bad");
+	 $("#resid_area" + lid).text("bad");
+	 $("#trim_info_area" + lid).hide();
+	 $("#acc_btn" + lid).show();
+	 $("#rej_btn" + lid).hide();
+       }
+     });
+   }
+
+   let fetch_data = function() {
+     console.log("fetch_data called");
+     let fluxes;
+     $.ajax({
+       type: "GET", url: ajax_proc_url, dataType: "json",
+       data: { csrfmiddlewaretoken: "{{ csrf_token }}", },
+       headers: {'X-CSRFToken': '{{ csrf_token }}'},
+       success: function(data) {
+	 dd = data.data;
+	 console.log(dd);
+	 for (let i = 0; i < dd.length; i++) {
+	   do_things(dd[i],i);
+	 }
+	 set_buttons();
+       }
+     });
+   }
+
+   fetch_data();
+
+ });
+
+</script>
+{% endblock %}

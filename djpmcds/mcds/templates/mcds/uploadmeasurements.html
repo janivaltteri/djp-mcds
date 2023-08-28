@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}MCDS: Upload measurements{% endblock %}
+
+{% block content %}
+<div class="header">
+  <h1> Upload measurements </h1>
+
+  <div class="navigation">
+    <a href="/mcds/main" class="linkbutton navbutton"> back to main </a>
+  </div>
+</div>
+
+<hr>
+
+<div class="content">
+
+  {% if messages %}
+  <div class="messagebox">
+    <ul class="messages">
+      {% for message in messages %}
+      <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <div class="submitform contentbox">
+    <h2 class="boxheader"> Upload measurements to {{ project.name }} </h2>
+  
+    <form method="post" enctype="multipart/form-data">
+      {{ form.as_p }}
+      {% csrf_token %}
+      <div class="buttonbox">
+	<input type="submit" value="Upload">
+      </div>
+    </form>
+  </div>
+
+  <div class="personaluploads contentbox">
+    <h4> Your uploads to {{ project.name }} </h4>
+    <table>
+      <thead>
+	<tr>
+	  <th> Upload ID </th>
+	  <th> Date uploaded </th>
+	  <th> <b> Measurement date </b> </th>
+	  <th> Status </th>
+	  <th> Processed </th>
+	  <th> Valid </th>
+	  <th> Check </th>
+	  <th> Unprocess </th>
+	  <th> Remove </th>
+	</tr>
+	<tr>
+	  <th> &nbsp; </th>
+	  <th> Filename </th>
+	  <th> &nbsp; </th>
+	  <th> File status </th>
+	  <th> &nbsp; </th>
+	  <th> &nbsp; </th>
+	  <th> &nbsp; </th>
+	  <th> &nbsp; </th>
+	  <th> &nbsp; </th>
+	</tr>
+      </thead>
+      <tbody>
+	{% for u in uploads %}
+	<tr>
+	  <td> {{ u.id }} </td>
+	  <td> <b> {{ u.date | date:"Y-m-d H:i:s" }}  </b> </td>
+	  <td> <b> {{ u.measure_date | date:"Y-m-d" }} </b> </td>
+	  <td>
+	    {% if u.status == "submitted" %}
+	    <span class="submitted_status"> Submitted </span>
+	    {% elif u.status == "accepted" %}
+	    <span class="accepted_status"> Accepted </span>
+	    {% elif u.status == "retracted" %}
+	    <span class="retracted_status"> Retracted </span>
+	    {% endif %}
+	  </td>
+	  <td>
+	    {% if u.processed %}
+	    <span class="good_status"> True </span>
+	    {% else %}
+	    <span class="bad_status"> False </span>
+	    {% endif %}
+	  </td>
+	  <td>
+	    {% if u.valid %}
+	    <span class="good_status"> True </span>
+	    {% else %}
+	    <span class="bad_status"> False </span>
+	    {% endif %}
+	  </td>
+	  <td>
+	    <a href="/mcds/checkmeasurements/{{ project.name }}/{{ u.id }}"
+	       class="linkbutton rowbutton"> check </a>
+	  </td>
+	  <td>
+	    {% if u.processed %}
+	      {% if u.status == "submitted" %}
+	      <a href="/mcds/unprocessmeasurements/{{ project.name }}/{{ u.id }}"
+		 class="linkbutton rowbutton"> unprocess </a>
+	      {% else %}
+	      ---
+	      {% endif %}
+	    {% else %}
+	    ---
+	    {% endif %}
+	  </td>
+	  <td>
+	    {% if u.status == "submitted" %}
+	    <a href="/mcds/removemeasurements/{{ project.name }}/{{ u.id }}"
+	       class="linkbutton rowbutton"> remove </a>
+	    {% else %}
+	    ---
+	    {% endif %}
+	  </td>
+	</tr>
+	<tr>
+	  <td> &nbsp; </td>
+	  <td> {{ u.datafile.name }} </td>
+	  <td> </td>
+	  <td> {{ u.datastatus }} </td>
+	  <td> &nbsp; </td>
+	  <td> &nbsp; </td>
+	  <td> &nbsp; </td>
+	  <td> &nbsp; </td>
+	  <td> &nbsp; </td>
+	</tr>
+	<tr>
+	  <td> &nbsp; </td>
+	  <td> {{ u.fieldform.name }} </td>
+	  <td> </td>
+	  <td> {{ u.fieldstatus }} </td>
+	  <td> &nbsp; </td>
+	  <td> &nbsp; </td>
+	  <td> &nbsp; </td>
+	  <td> &nbsp; </td>
+	  <td> &nbsp; </td>
+	</tr>
+	<tr>
+	  <td> &nbsp; </td>
+	  <td> <i> {{ u.comment }} </i> </td>
+	  <td> &nbsp; </td>
+	  <td> &nbsp; </td>
+	  <td> &nbsp; </td>
+	  <td> &nbsp; </td>
+	  <td> &nbsp; </td>
+	  <td> &nbsp; </td>
+	  <td> &nbsp; </td>
+	</tr>
+	{% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}
