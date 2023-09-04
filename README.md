@@ -39,3 +39,7 @@ POSTGRES_PASSWORD=
 4. Change the contents of `userlist.json`
 
 The included example list creates two users, `tester` and `autotrimmer`. The `autotrimmer` is required, and must not be removed, but you might want to change the users password.
+
+5. Add your host to settings
+
+Your host name should be listed in `djpmcds/djpmcds/settings.py` `ALLOWED_HOSTS`
