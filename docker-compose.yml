@@ -8,11 +8,14 @@ services:
       context: ./djpmcds
       dockerfile: Dockerfile
     command: python3 manage.py runserver 0.0.0.0:8000
+    # command: /usr/local/bin/gunicorn --access-logfile /opt/djpmcds/logs/access.log --workers 3 --timeout 300 --bind 0.0.0.0:8000 --bind unix:/opt/djpmcds/socket/djpmcds.sock djpmcds.wsgi:application
     volumes:
       - /opt/djpmcds/files/datafiles:/opt/djpmcds/files/datafiles
       - /opt/djpmcds/files/fieldforms:/opt/djpmcds/files/fieldforms
       - /opt/djpmcds/files/dataspecs:/opt/djpmcds/files/dataspecs
       - /opt/djpmcds/files/downloads:/opt/djpmcds/files/downloads
+      - /opt/djpmcds/socket:/opt/djpmcds/socket
+      - /opt/djpmcds/logs:/opt/djpmcds/logs
     ports:
       - "8000:8000"
     expose:
@@ -48,6 +51,7 @@ services:
       - /opt/djpmcds/files/dataspecs:/opt/djpmcds/files/dataspecs
       - /opt/djpmcds/files/downloads:/opt/djpmcds/files/downloads
       - /opt/djpmcds/celery:/opt/djpmcds/celery
+      - /opt/djpmcds/logs:/opt/djpmcds/logs
     depends_on:
       - djpmcds
       - db

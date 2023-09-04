@@ -11,6 +11,7 @@ RUN mkdir -p /opt/djpmcds/files/datafiles
 RUN mkdir -p /opt/djpmcds/files/dataspecs
 RUN mkdir -p /opt/djpmcds/files/downloads
 RUN mkdir -p /opt/djpmcds/files/fieldforms
+RUN mkdir -p /opt/djpmcds/logs
 
 COPY requirements.txt /opt/djpmcds/requirements.txt
 WORKDIR /opt/djpmcds

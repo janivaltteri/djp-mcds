@@ -1,0 +1,136 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <title> {% block title %}{% endblock %} </title>
+    <style>
+     body {
+       margin: 0;
+       padding: 0;
+     }
+     .header {
+       background-color: #fff;
+       padding: 10px;
+     }
+     .content {
+       background-color: #fff;
+       padding: 10px 5px;
+     }
+     .contentbox {
+       padding: 20px;
+       margin: 10px;
+       background-color: #eee;
+     }
+     .messagebox {
+       padding: 20px;
+       margin: 10px;
+       background-color: #e88;
+     }
+     .navigation {
+       padding: 5px 0px 20px 0px;
+     }
+     .posteditlink {
+       padding: 10px 2px 10px 2px;
+       margin: 5px 0px;
+     }
+     .linkbutton {
+       text-decoration: none;
+       color: #002255;
+       background-color: lightgreen;
+       border-radius: 2px;
+     }
+     .belowbutton {
+       border: 1px solid black;
+       padding: 4px;
+       margin: 3px;
+     }
+     .navbutton {
+       padding: 4px;
+       border: 1px solid black;
+       margin: 3px;
+     }
+     .seriesarea {
+       display: block;
+     }
+     .seriesinfo {
+       padding: 5px;
+       margin: 2px;
+       display: inline-block;
+       border-style: solid;
+       border-width: 1px;
+       border-radius: 3px;
+       vertical-align: top;
+       width: 220px;
+     }
+     .infopgroup {
+       padding: 6px 0px;
+     }
+     .infopgroup p {
+       margin: 7px 0px;
+       padding: 0px;
+     }
+     .info_area {
+       padding: 5px;
+     }
+     .trim_entry {
+       width: 80px;
+     }
+     .seriesfigure {
+       display: inline-block;
+       margin: auto;
+       width: 600px;
+       height: 400px;
+     }
+     .resid_verybad {
+       color: #ff0000;
+     }
+     .resid_bad {
+       color: #aa0000;
+     }
+     .co2_text {
+       color: #ff3585;
+     }
+     .ch4_text {
+       color: #3585ff;
+     }
+     .n2o_text {
+       color: #ff8525;
+     }
+     .good_status {
+       color: #00cc55;
+     }
+     .bad_status {
+       color: #ff0011;
+     }
+     .submitted_status {
+       color: #ee8811
+     }
+     .accepted_status {
+       color: #22dd00;
+     }
+     .retracted_status {
+       color: #dd2200;
+     }
+     table {
+       border-spacing: 3px;
+     }
+     th {
+       text-align: left;
+       font-weight: bold;
+     }
+     th, td {
+       padding: 0px 6px 0px 6px;
+     }
+    </style>
+    <!-- <link href="{% static 'css/submit.css' %}" rel="stylesheet"> -->
+  </head>
+  <body>
+    <div class="page">
+      {% block content %}
+      {% endblock %}
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js" integrity="sha512-3gJwYpMe3QewGELv8k/BX9vcqhryRdzRMxVfq6ngyWXwo03GFEzjsUm8Q7RZcHPHksttq7/GFoxjCVUjkjvPdw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    {% block scripts %}
+    {% endblock %}
+  </body>
+</html>

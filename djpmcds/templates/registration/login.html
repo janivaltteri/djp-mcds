@@ -1,0 +1,35 @@
+<!doctype html>
+
+<!-- tämä on login-sivun templaatti -->
+
+<html>
+  
+  <head>
+    
+    <meta charset="utf-8">
+    
+    {% load static %}
+    <link rel="stylesheet" href="{% static "css/submit.css" %}" />
+
+    <title> data submission login </title>
+    
+  </head>
+  
+  <body>
+
+    <div class="maincontent">
+      
+      <div class="login contentbox">
+	<h2 class="textp logintitle"> Login </h2>
+	<form class="textp logintext" method="post">
+	  {% csrf_token %}
+	  {{ form.as_p }}
+	  <button class="submitbutton" type="submit"> submit </button>
+	</form>
+      </div>
+      
+    </div>
+
+  </body>
+
+</html>

@@ -1,0 +1,31 @@
+<!doctype html>
+
+<!-- tämä on logout-sivun templaatti -->
+
+<html>
+  
+  <head>
+    
+    <meta charset="utf-8">
+    
+    {% load static %}
+    <link rel="stylesheet" href="{% static "css/submit.css" %}" />
+
+    <title> logout </title>
+    
+  </head>
+  
+  <body>
+
+    <div class="page">
+      
+      <div class="logout contentbox">
+	<p class="textp logintext"> You are logged out. </p>
+	<p class="linkp"> <a href="/"> Back to front page </a> </p>
+      </div>
+      
+    </div>
+
+  </body>
+
+</html>
