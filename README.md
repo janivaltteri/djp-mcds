@@ -40,6 +40,10 @@ POSTGRES_PASSWORD=
 
 The included example list creates two users, `tester` and `autotrimmer`. The `autotrimmer` is required, and must not be removed, but you might want to change the users password.
 
-5. Add your host to settings
+5. Check settings for production if needed
 
-Your host name should be listed in `djpmcds/djpmcds/settings.py` `ALLOWED_HOSTS`
+Your host name should be listed in `djpmcds/djpmcds/settings.py` `ALLOWED_HOSTS`.
+
+Also in `settings.py` switch `Debug=False`.
+
+In `docker-compose.yml` remove the `python manage.py runserver 0.0.0.0:8000` line, uncomment the other command line and set arguments according to your needs.
