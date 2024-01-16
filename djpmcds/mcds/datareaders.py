@@ -305,6 +305,7 @@ def read_df_licor(dataspec, filepath: str, return_df: bool):
 ## this was written for one specific data format from one user in HoliSoils project
 ## not useable for the general case! licor smart data are variable...
 ## assumes column names, currently only CO2
+## TODO: fix missing spec
 def read_df_licorsmart(filepath: str, return_df: bool):
     out = {'ok': False, 'err': []}
 
@@ -357,7 +358,7 @@ def read_df_licorsmart(filepath: str, return_df: bool):
 
     return out
 
-## currently only reads CO2
+## TODO: currently only reads CO2, read other gases
 def read_df_gasmet(dataspec,filepath: str, return_df: bool):
     out = {'ok': False, 'err': []}
 
@@ -483,6 +484,7 @@ def read_df_egm5(dataspec, filepath: str, return_df: bool):
     return out
 
 ## EGM4 data files do not contain year, thus needs to be sent as parameter
+## TODO: fix missing spec
 def read_df_egm4(filepath: str, year: int, return_df: bool):
     out = {'ok': False, 'err': []}
 

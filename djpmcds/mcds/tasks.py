@@ -83,9 +83,9 @@ def process_dataset(meas_id):
     elif device == "Gasmet":
         df = read_df_gasmet(spec,meas.datafile,True)
     elif device == "EGM5":
-        df = read_df_egm5(meas.datafile,True)
+        df = read_df_egm5(spec,meas.datafile,True)
     elif device == "EGM4":
-        df = read_df_egm4(meas.datafile,meas.measure_date.year,True)
+        df = read_df_egm4(meas.datafile,meas.measure_date.year,True) # todo: fix missing spec
     else:
         meas.errors     = "dataspec device not identified"
         meas.datastatus = "invalid"
