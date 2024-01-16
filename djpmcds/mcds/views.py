@@ -622,7 +622,7 @@ def createdownload(request,project_name):
     newdownload.save()
 
     dl_id = newdownload.id
-    newdownload.file = "/home/jva/djp-mcds-files/downloads/" + \
+    newdownload.file = "/opt/djpmcds/files/downloads/" + \
         project_name + "-" + str(dl_id) + ".csv"
     newdownload.save()
 

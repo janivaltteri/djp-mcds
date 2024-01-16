@@ -8,7 +8,11 @@
   <h2> Hello {{ uname }} </h2>
 
   <div class="navigation">
-    <a href="{% url 'logout' %}" class="linkbutton navbutton"> log out </a>
+    <!-- <a href="{% url 'logout' %}" class="linkbutton navbutton"> log out </a> -->
+    <form method="post" action="{% url 'logout' %}">
+    {% csrf_token %}
+      <button type="submit" class="linkbutton navbutton">logout</button>
+    </form>
   </div>  
 </div>
 
