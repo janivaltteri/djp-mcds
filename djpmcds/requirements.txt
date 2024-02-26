@@ -6,3 +6,4 @@ scipy
 pandas
 gunicorn
 psycopg2-binary
+django-cleanup
