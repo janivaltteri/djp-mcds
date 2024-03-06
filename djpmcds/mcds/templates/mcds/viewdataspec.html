@@ -54,6 +54,7 @@
       </div>
     </div>
 
+    {% if user.is_staff %}
     <a href="/mcds/deactivatedataspec/{{ dataspec.id }}"
        class="linkbutton belowbutton">
       {% if dataspec.active %}
@@ -62,6 +63,7 @@
       Activate
       {% endif %}
     </a>
+    {% endif %}
 
   </div>
 </div>
