@@ -335,7 +335,7 @@ def viewpointdata(request, project_name, meas_id):
     meas     = Measurements.objects.get(pk=meas_id)
     dspec    = Dataspec.objects.get(pk=meas.dataspec.id)
     context  = { 'project': project, 'meas': meas, 'dspec': dspec,
-                 'interval': dspec.spec.get("datafile").get("interval")
+                 'interval': dspec.spec.get("datafile").get("interval"),
                  'xpad': dspec.spec.get("durations").get("pad") }
     template = loader.get_template('mcds/viewpointdata.html')
     return HttpResponse(template.render(context, request))
