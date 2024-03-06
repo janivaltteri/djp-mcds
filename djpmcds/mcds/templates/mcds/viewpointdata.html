@@ -56,7 +56,7 @@
  $('document').ready( () => {
 
    const meas_id = {{ meas.id }};
-   const interval = {{ interval }};
+   const interval = {{ interval }}; // mesurement time interval from dataspec
 
    console.log("interval " + interval);
    
@@ -72,7 +72,7 @@
    const width = outer_width - margin.left - margin.right;
    const height = outer_height - margin.top - margin.bottom;
 
-   const ypad = 5;
+   const ypad = 5; // vertical padding added to the y-axis in addition to data range
 
    const rnd = 8;
 
