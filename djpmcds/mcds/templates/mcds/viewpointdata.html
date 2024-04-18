@@ -74,14 +74,16 @@
    const height = outer_height - margin.top - margin.bottom;
 
    const ypad = 5; // vertical padding added to the y-axis in addition to data range
+   const rnd = 8; // rounding
 
-   const rnd = 8;
-
+   let pagedata = [];
    let xf = [];
    let yf = [];
    let x_max_values = [];
    let svg_areas = [];
 
+   // draws the figure
+   // args: d is data from server, id is index on page
    let do_things = function(d,id) {
 
      // header
@@ -97,7 +99,8 @@
        str1 = " -- " + d.gas + " -- "
      }
      let str2 = d.start_time + ' to ' + d.end_time
-     $("#place").append( $("<div>").addClass("seriesheader").append( $("<p>").html(str0 + str1 + str2) ) );
+     let rdrb = $("<button>").addClass("fluxbutton").addClass("redraw_fig").attr("id","redraw_fig" + id).attr("data-id",id).attr("data-sid",d.id).text("Redraw");
+     $("#place").append( $("<div>").addClass("seriesheader").append( $("<p>").html(str0 + str1 + str2).append(rdrb) ) );
      $("#place").append(
        $("<div>").addClass("seriesarea").attr("id","area" + id)
 	 .append( $("<div>").addClass("seriesinfo").addClass("seriesauto").attr("id","auto" + id) )
@@ -163,7 +166,7 @@
 				"translate(" + margin.left + "," + margin.top + ")");
 
      // x-axis
-     let xmax = d.values.length * interval + 1;
+     let xmax = d.values.length * interval + 1; // todo: use padding here to put zero at the correct position
      let x = d3.scaleLinear().domain([0, xmax]).range([0, width]);
      let x_axis = d3.axisBottom(x);
      svg_area.append('g').attr('transform', `translate(0, ${height})`).call(x_axis);
@@ -300,6 +303,9 @@
      $(".remove_flux").click(function() {
        remove_flux($(this).data('sid'),$(this).data('id'));
      });
+     $(".redraw_fig").click(function() {
+       redraw_figure($(this).data('sid'),$(this).data('id'));
+     });
      $(".acc_btn").click(function() {
        mark_good($(this).data('sid'),$(this).data('id'));
      });
@@ -313,6 +319,10 @@
        let tt = parseInt($("#trim_tail_entry" + lid).val());
        trim_flux(sid,lid,th,tt);
      });
+   }
+
+   let redraw_figure = function(sid,lid) {
+     console.log("pressed redraw sid " + sid + " lid " + lid);
    }
 
    let calculate_flux = function(sid,lid) {
@@ -461,11 +471,13 @@
        headers: {'X-CSRFToken': '{{ csrf_token }}'},
        success: function(data) {
 	 dd = data.data;
-	 console.log(dd);
 	 for (let i = 0; i < dd.length; i++) {
+	   pagedata[i] = dd[i];
 	   do_things(dd[i],i);
+	   pagedata[i].plotscaling = 0;
 	 }
 	 set_buttons();
+	 console.log(pagedata);
        }
      });
    }

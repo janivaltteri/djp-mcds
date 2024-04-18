@@ -168,7 +168,43 @@ def read_fieldform(dataspec,filepath,return_df,return_dict):
             return out
 
     ## check chamber volume and area
-    ## TODO
+    if "chamber_volume" in req_names:
+        chambervol_ok = True
+
+        chambervol_colname = ffreq.get("chamber_volume").get("column")
+
+        if df.dtypes[chambervol_colname] == object:
+            try:
+                df[chambervol_colname] = pandas.to_numeric(
+                    df[chambervol_colname].astype(str).str.replace(',','.'))
+            except ValueError as e:
+                out['err'].append('cannot convert chamber volume to numeric ')
+                chambervol_ok = False
+            except:
+                out['err'].append('cannot parse chamber volume ')
+                chambervol_ok = False
+
+        if not chambervol_ok:
+            return out
+
+    if "chamber_area" in req_names:
+        chamberarea_ok = True
+
+        chamberarea_colname = ffreq.get("chamber_area").get("column")
+
+        if df.dtypes[chamberarea_colname] == object:
+            try:
+                df[chamberarea_colname] = pandas.to_numeric(
+                    df[chamberarea_colname].astype(str).str.replace(',','.'))
+            except ValueError as e:
+                out['err'].append('cannot convert chamber area to numeric ')
+                chamberarea_ok = False
+            except:
+                out['err'].append('cannot parse chamber area ')
+                chamberarea_ok = False
+
+        if not chamberarea_ok:
+            return out
 
     ## check chamber temps
     if "start_temp" in req_names:
@@ -183,6 +219,8 @@ def read_fieldform(dataspec,filepath,return_df,return_dict):
             except ValueError as e:
                 out['err'].append('cannot convert start temp to numeric ')
                 starttemp_ok = False
+            except:
+                out['ree'].append('cannot parse start temp ')
 
         if not starttemp_ok:
             return out
@@ -199,6 +237,8 @@ def read_fieldform(dataspec,filepath,return_df,return_dict):
             except ValueError as e:
                 out['err'].append('cannot convert end temp to numeric ')
                 endtemp_ok = False
+            except:
+                out['err'].append('cannot parse end temp ')
 
         if not endtemp_ok:
             return out
@@ -305,8 +345,7 @@ def read_df_licor(dataspec, filepath: str, return_df: bool):
 ## this was written for one specific data format from one user in HoliSoils project
 ## not useable for the general case! licor smart data are variable...
 ## assumes column names, currently only CO2
-## TODO: fix missing spec
-def read_df_licorsmart(filepath: str, return_df: bool):
+def read_df_licorsmart(dataspec, filepath: str, return_df: bool):
     out = {'ok': False, 'err': []}
 
     ## find lines that do not contain data
@@ -328,22 +367,26 @@ def read_df_licorsmart(filepath: str, return_df: bool):
         df = pandas.read_csv(filepath,sep=None,names=cnames,skiprows=textlines,
                              engine="python")
     except Exception as e:
-        out['err'].append("read_df_licor_smart: error in pandas.read_csv() - " + str(e))
+        out['err'].append("read_df_licorsmart: error in pandas.read_csv() - " + str(e))
         print(e)
         return out
 
     ## interpret time
+    time_format = dataspec.get("datafile").get("datetime").get("time").get("format")
+    time_colname = dataspec.get("datafile").get("datetime").get("time").get("column")
     try:
-        df["Time"] = pandas.to_datetime(df["Date"],format='%Y-%m-%d %H:%M:%S').dt.time
+        df["Time"] = pandas.to_datetime(df[time_colname],format=time_format).dt.time
     except:
-        out['err'].append("read_df_licor_smart: cannot parse time from Date column ")
+        out['err'].append("read_df_licorsmart: cannot parse time from Date column ")
         return out
 
     ## interpret date
+    date_format = dataspec.get("datafile").get("datetime").get("date").get("format")
+    date_colname = dataspec.get("datafile").get("datetime").get("date").get("column")
     try:
-        df["Date"] = pandas.to_datetime(df["Date"],format='%Y-%m-%d %H:%M:%S').dt.date
+        df["Date"] = pandas.to_datetime(df[date_colname],format=date_format).dt.date
     except:
-        out['err'].append('read_df_licor_smart: cannot parse date from Date column ')
+        out['err'].append('read_df_licorsmart: cannot parse date from Date column ')
         return out
 
     ## success, fill out object if needed

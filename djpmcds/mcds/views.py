@@ -875,6 +875,7 @@ def get_series_data(request,meas_id):
                     'valid':      s.valid,
                     'interval':   interval }
 
+            ## todo: additionally, get pfluxes from all users, use newest
             pflux = Flux.objects.filter(series=s,trimmer=user).all()
             if len(pflux) == 0:
                 obj['pflux'] = 'none'
