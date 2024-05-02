@@ -173,7 +173,10 @@ def read_fieldform(dataspec,filepath,return_df,return_dict):
 
         chambervol_colname = ffreq.get("chamber_volume").get("column")
 
-        if df.dtypes[chambervol_colname] == object:
+        ## check that a) column type is numeric, b) values are not nan, c) values > 0.0
+
+        if df[chambervol_colname].dtype.kind not in 'iuf':
+            ##if df.dtypes[chambervol_colname] == object:
             try:
                 df[chambervol_colname] = pandas.to_numeric(
                     df[chambervol_colname].astype(str).str.replace(',','.'))
@@ -184,6 +187,16 @@ def read_fieldform(dataspec,filepath,return_df,return_dict):
                 out['err'].append('cannot parse chamber volume ')
                 chambervol_ok = False
 
+        c_vol_nans = df[chambervol_colname].apply(lambda x: True if numpy.isnan(x) else False)
+        if c_vol_nans.any():
+            out['err'].append('some chamber volumes are NaN')
+            chambervol_ok = False
+        else:
+            c_vol_pos = df[chambervol_colname].apply(lambda x: True if x > 0.0 else False)
+            if not c_vol_pos.all():
+                out['err'].append('some chamber volumes are non-positive')
+                chambervol_ok = False
+
         if not chambervol_ok:
             return out
 
@@ -192,7 +205,8 @@ def read_fieldform(dataspec,filepath,return_df,return_dict):
 
         chamberarea_colname = ffreq.get("chamber_area").get("column")
 
-        if df.dtypes[chamberarea_colname] == object:
+        if df[chamberarea_colname].dtype.kind not in 'iuf':
+            ##if df.dtypes[chamberarea_colname] == object:
             try:
                 df[chamberarea_colname] = pandas.to_numeric(
                     df[chamberarea_colname].astype(str).str.replace(',','.'))
@@ -201,6 +215,16 @@ def read_fieldform(dataspec,filepath,return_df,return_dict):
                 chamberarea_ok = False
             except:
                 out['err'].append('cannot parse chamber area ')
+                chamberarea_ok = False
+
+        c_area_nans = df[chamberarea_colname].apply(lambda x: True if numpy.isnan(x) else False)
+        if c_area_nans.any():
+            out['err'].append('some chamber volumes are NaN')
+            chamberarea_ok = False
+        else:
+            c_area_pos = df[chamberarea_colname].apply(lambda x: True if x > 0.0 else False)
+            if not c_area_pos.all():
+                out['err'].append('some chamber volumes are non-positive')
                 chamberarea_ok = False
 
         if not chamberarea_ok:

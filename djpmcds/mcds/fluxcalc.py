@@ -92,7 +92,14 @@ def calculate_flux_value(s,interval,trimhead=0,trimtail=0):
 
     lr = linregress(secs,values)
 
-    lflux = (((101325.0 * lr.slope * 1e-6) /
+    if s.unit == "ppm":
+        ppconv = 1e-6
+    elif s.unit == "ppb":
+        ppconv = 1e-9
+    else:
+        raise FluxCalcException("unit not ppm or ppb")
+
+    lflux = (((101325.0 * lr.slope * ppconv) /
               (8.31446 * (temp + coefs['zerotemp']))) *
              (volume / area) * molmass * coefs['convf'])
 
