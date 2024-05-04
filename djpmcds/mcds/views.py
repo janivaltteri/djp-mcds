@@ -13,6 +13,11 @@ from django.contrib.auth.decorators import login_required
 
 from django.forms.models import model_to_dict
 
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import authentication, permissions
+from rest_framework.renderers import JSONRenderer
+
 from scipy.stats import linregress
 
 from .datareaders import (
@@ -949,3 +954,9 @@ def get_fluxes(request,meas_id):
     result = { 'data': out }
 
     return JsonResponse(result)
+
+## data API views
+
+class PingApi(APIView):
+    def get(self, request, format=None):
+        return Response({"message": "pong"})

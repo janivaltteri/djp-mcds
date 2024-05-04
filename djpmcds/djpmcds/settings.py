@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
     'mcds.apps.McdsConfig',
     'django_cleanup.apps.CleanupConfig',
 ]
