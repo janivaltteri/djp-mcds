@@ -72,5 +72,5 @@ urlpatterns = [
          views.downloaddatafile, name='downloaddatafile'),
     path('get_download_status/<int:download_id>',
          views.get_download_status, name='get_download_status'),
-    path('api/ping', PingApi.as_view()),
+    path('api/ping', views.PingApi.as_view()),
 ]
