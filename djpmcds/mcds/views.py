@@ -18,6 +18,8 @@ from rest_framework.response import Response
 from rest_framework import authentication, permissions
 from rest_framework.renderers import JSONRenderer
 
+from knox.auth import TokenAuthentication
+
 from scipy.stats import linregress
 
 from .datareaders import (
@@ -36,6 +38,12 @@ from .models import (
     Series,
     Flux,
     Download
+)
+
+from .serialisers import (
+    WorkerAssignmentSerialiser,
+    MeasurementsSerialiser,
+    SeriesSerialiser
 )
 
 from .forms import (
@@ -960,3 +968,57 @@ def get_fluxes(request,meas_id):
 class PingApi(APIView):
     def get(self, request, format=None):
         return Response({"message": "pong"})
+
+class WorkerAssignmentApi(APIView):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request, format=None):
+        user = request.user
+        worker_assignments = WorkerAssignment.objects.filter(worker=user).all()
+        ws = WorkerAssignmentSerialiser(worker_assignments, many=True)
+        context = {"workerassignments": ws.data,
+                   "message": "ok"}
+        return Response(context)
+
+class MeasurementsApi(APIView):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request, project_id=None, format=None):
+        ## todo: check that user is assigned to this project
+
+        if project_id:
+            measurements = Measurements.objects.filter(project=project_id).all()
+            if len(measurements) > 0:
+                ms = MeasurementsSerialiser(measurements, many=True)
+                context = {"measurements": ms.data,
+                           "message": "ok"}
+            else:
+                context = {"measurements": [],
+                           "message": "no measurements with given project id"}
+        else:
+            context = {"measurements": [],
+                       "message": "missing project id"}
+        return Response(context)
+
+class SeriesApi(APIView):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request, measurements_id=None, format=None):
+        ## todo: check that user is assigned to this project
+
+        if measurements_id:
+            series = Series.objects.filter(measurements=measurements_id).all()
+            if len(series) > 0:
+                ss = SeriesSerialiser(series, many=True)
+                context = {"series": ss.data,
+                           "message": "ok"}
+            else:
+                context = {"series": [],
+                           "message": "no series with given series id"}
+        else:
+            context = {"series": [],
+                       "message": "missing series id"}
+        return Response(context)

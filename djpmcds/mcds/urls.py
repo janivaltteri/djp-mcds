@@ -73,4 +73,7 @@ urlpatterns = [
     path('get_download_status/<int:download_id>',
          views.get_download_status, name='get_download_status'),
     path('api/ping', views.PingApi.as_view()),
+    path('api/workerassignments', views.WorkerAssignmentApi.as_view()),
+    path('api/measurements/<int:project_id>', views.MeasurementsApi.as_view()),
+    path('api/series/<int:measurements_id>', views.SeriesApi.as_view()),
 ]
