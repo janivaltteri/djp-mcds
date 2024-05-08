@@ -139,7 +139,7 @@ REST_KNOX = {
     'AUTH_TOKEN_CHARACTER_LENGTH': 32,
     'TOKEN_TTL': timedelta(hours=24),
     'USER_SERIALIZER': 'knox.serializers.UserSerializer',
-    'TOKEN_LIMIT_PER_USER': 1,
+    'TOKEN_LIMIT_PER_USER': 16,
     'AUTO_REFRESH': False, # This defines if the token expiry time is extended by TOKEN_TTL each time the token is used.
     'EXPIRY_DATETIME_FORMAT': api_settings.DATETIME_FORMAT,
 }

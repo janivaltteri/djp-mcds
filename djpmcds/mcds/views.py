@@ -1,4 +1,5 @@
 import json
+import copy
 import numpy
 import datetime
 
@@ -43,7 +44,8 @@ from .models import (
 from .serialisers import (
     WorkerAssignmentSerialiser,
     MeasurementsSerialiser,
-    SeriesSerialiser
+    SeriesSerialiser,
+    FluxSerialiser
 )
 
 from .forms import (
@@ -976,9 +978,11 @@ class WorkerAssignmentApi(APIView):
     def get(self, request, format=None):
         user = request.user
         worker_assignments = WorkerAssignment.objects.filter(worker=user).all()
-        ws = WorkerAssignmentSerialiser(worker_assignments, many=True)
-        context = {"workerassignments": ws.data,
-                   "message": "ok"}
+        if len(worker_assignments) > 0:
+            ws = WorkerAssignmentSerialiser(worker_assignments, many=True)
+            context = {"workerassignments": ws.data, "message": "ok"}
+        else:
+            context = {"workerassignments": [], "message": "no assignments to projects"}
         return Response(context)
 
 class MeasurementsApi(APIView):
@@ -986,9 +990,17 @@ class MeasurementsApi(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get(self, request, project_id=None, format=None):
-        ## todo: check that user is assigned to this project
+        user = request.user
 
-        if project_id:
+        if not project_id:
+            context = {"measurements": [], "message": "missing project id"}
+            return Response(context)
+
+        wa = WorkerAssignment.objects.filter(worker=user).filter(project=project_id).filter(active=True).all()
+        if len(wa) < 1:
+            context = {"measurements": [],
+                       "message": "no active assignment to given project id"}
+        else:
             measurements = Measurements.objects.filter(project=project_id).all()
             if len(measurements) > 0:
                 ms = MeasurementsSerialiser(measurements, many=True)
@@ -997,9 +1009,7 @@ class MeasurementsApi(APIView):
             else:
                 context = {"measurements": [],
                            "message": "no measurements with given project id"}
-        else:
-            context = {"measurements": [],
-                       "message": "missing project id"}
+
         return Response(context)
 
 class SeriesApi(APIView):
@@ -1007,18 +1017,137 @@ class SeriesApi(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get(self, request, measurements_id=None, format=None):
-        ## todo: check that user is assigned to this project
+        user = request.user
 
-        if measurements_id:
-            series = Series.objects.filter(measurements=measurements_id).all()
-            if len(series) > 0:
-                ss = SeriesSerialiser(series, many=True)
-                context = {"series": ss.data,
-                           "message": "ok"}
-            else:
-                context = {"series": [],
-                           "message": "no series with given series id"}
+        if not measurements_id:
+            context = {"series": [], "message": "missing measurements id"}
+            return Response(context)
+
+        try:
+            meas = Measurements.objects.get(id=measurements_id)
+        except Measurements.DoesNotExist:
+            meas = None
+
+        if not meas:
+            context = {"series": [],
+                       "message": "measurements with given id does not exist"}
+            return Response(context)
+
+        project_id = meas.project
+        wa = WorkerAssignment.objects.filter(worker=user).filter(project=project_id).filter(active=True).all()
+        if len(wa) < 1:
+            context = {"series": [],
+                       "message": "no active assignment to project containing the given measurements id"}
+            return Response(context)
+
+        series = Series.objects.filter(measurements=measurements_id).all()
+        if len(series) > 0:
+            ss = SeriesSerialiser(series, many=True)
+            context = {"series": ss.data,
+                       "message": "ok"}
         else:
             context = {"series": [],
-                       "message": "missing series id"}
+                       "message": "no series with given series id"}
+
+        return Response(context)
+
+class FluxApi(APIView):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request, series_id=None, format=None):
+        user = request.user
+
+        if not series_id:
+            context = {"flux": [], "message": "missing series id"}
+            return Response(context)
+
+        try:
+            series = Series.objects.get(id=series_id)
+        except Series.DoesNotExist:
+            series = None
+
+        if not series:
+            context = {"flux": [],
+                       "message": "series with given if does not exist"}
+            return Response(context)
+
+        meas = series.measurements
+        project = meas.project
+        project_id = project.id
+        wa = WorkerAssignment.objects.filter(worker=user).filter(project=project_id).filter(active=True).all()
+        if len(wa) < 1:
+            context = {"flux": [],
+                       "message": "no active assignment to project containing the given series id"}
+            return Response(context)
+
+        flux = Flux.objects.filter(series=series_id).all()
+        if len(flux) > 0:
+            fs = FluxSerialiser(flux, many=True)
+            context = {"flux": fs.data, "message": "ok"}
+        else:
+            context = {"flux": [], "message": "no series with given series id"}
+
+        return Response(context)
+
+class FluxRecalculateApi(APIView):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request, series_id=None, format=None):
+        user = request.user
+
+        if not user.is_staff:
+            context = {"flux": [], "message": "flux recalculate requires staff status"}
+            return Response(context)
+
+        if not series_id:
+            context = {"flux": [], "message": "missing series id"}
+            return Response(context)
+
+        flux = Flux.objects.filter(series=series_id).all()
+        if len(flux) > 0:
+            fs0 = FluxSerialiser(flux, many=True)
+            fsprev = copy.deepcopy(fs0.data)
+            fvs = [None for f in flux]
+            errmsg = []
+            for i in range(len(flux)):
+                f = flux[i]
+                series = f.series
+                meas = series.measurements
+                dataspec = meas.dataspec
+                interval = dataspec.spec.get("datafile").get("interval")
+                if not interval:
+                    fvs[i] = None
+                    errmsg.append("no interval from dataspec->datafile ")
+                else:
+                    try:
+                        fvs[i] = calculate_flux_value(series,interval,
+                                                      f.trim_head,f.trim_tail)
+                    except:
+                        fvs[i] = None
+                        errmsg.append("calculate_flux_value() failed ")
+            if None in fvs:
+                context = {"flux": [], "message": "flux recalculation failed", "err": errmsg}
+                return Response(context)
+            for i in range(len(flux)):
+                f = flux[i]
+                fv = fvs[i]
+                f.datetime = datetime.datetime.strftime(datetime.date.today(),
+                                                        format="%Y-%m-%d")
+                f.slope = fv['slope']
+                f.intercept = fv['intercept']
+                f.trim_head = fv['trim_head']
+                f.trim_tail = fv['trim_tail']
+                f.flux = fv['lflux']
+                f.resid = fv['resid']
+                f.save()
+            nflux = Flux.objects.filter(series=series_id).all()
+            fs1 = FluxSerialiser(nflux, many=True)
+            context = {"flux": fs1.data,
+                       "flux_prev": fsprev,
+                       "message": "ok"}
+        else:
+            context = {"flux": [], "message": "no flux with given series id"}
+
         return Response(context)

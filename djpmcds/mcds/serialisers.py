@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Project, WorkerAssignment, Measurements, Series
+from .models import Project, WorkerAssignment, Measurements, Series, Flux
 from django.contrib.auth.models import User
 
 class WorkerAssignmentSerialiser(serializers.ModelSerializer):
@@ -30,3 +30,11 @@ class SeriesSerialiser(serializers.ModelSerializer):
         fields = ["id", "measurements", "date", "siteid", "subsiteid", "point", "gas",
                   "start_time", "end_time", "start_temp", "end_temp", "unit", "env",
                   "volume", "area", "pad_head", "pad_tail", "values", "valid"]
+
+class FluxSerialiser(serializers.ModelSerializer):
+    trimmer_name = serializers.CharField(source='trimmer.username')
+
+    class Meta:
+        model = Flux
+        fields = ["id","series","trimmer","trimmer_name","datetime","trim_head","trim_tail",
+                  "slope","intercept","flux","resid","bad"]
