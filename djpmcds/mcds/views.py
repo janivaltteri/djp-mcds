@@ -1004,8 +1004,7 @@ class MeasurementsApi(APIView):
             measurements = Measurements.objects.filter(project=project_id).all()
             if len(measurements) > 0:
                 ms = MeasurementsSerialiser(measurements, many=True)
-                context = {"measurements": ms.data,
-                           "message": "ok"}
+                context = {"measurements": ms.data, "message": "ok"}
             else:
                 context = {"measurements": [],
                            "message": "no measurements with given project id"}
@@ -1030,7 +1029,26 @@ class SeriesApi(APIView):
 
         if not meas:
             context = {"series": [],
-                       "message": "measurements with given id does not exist"}
+                       "message": "measurements set with given id does not exist"}
+            return Response(context)
+
+        if not meas.processed:
+            context = {"series": [],
+                       "message": "measurements set not yet processed"}
+            return Response(context)
+
+        if not meas.valid:
+            context = {"series": [],
+                       "message": "measurements set not passing validation"}
+            return Response(context)
+
+        if meas.status == "submitted":
+            context = {"series": [],
+                       "message": "measurements set not yet accepted by uploader"}
+            return Response(context)
+        elif meas.status == "retracted":
+            context = {"series": [],
+                       "message": "measurements set retracted by uploader"}
             return Response(context)
 
         project_id = meas.project
