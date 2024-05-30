@@ -187,6 +187,9 @@ def read_fieldform(dataspec,filepath,return_df,return_dict):
                 out['err'].append('cannot parse chamber volume ')
                 chambervol_ok = False
 
+        if not chambervol_ok:
+            return out
+
         c_vol_nans = df[chambervol_colname].apply(lambda x: True if numpy.isnan(x) else False)
         if c_vol_nans.any():
             out['err'].append('some chamber volumes are NaN')
@@ -216,6 +219,9 @@ def read_fieldform(dataspec,filepath,return_df,return_dict):
             except:
                 out['err'].append('cannot parse chamber area ')
                 chamberarea_ok = False
+
+        if not chamberarea_ok:
+            return out
 
         c_area_nans = df[chamberarea_colname].apply(lambda x: True if numpy.isnan(x) else False)
         if c_area_nans.any():
