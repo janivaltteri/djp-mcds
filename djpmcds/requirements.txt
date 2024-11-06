@@ -6,6 +6,7 @@ scipy
 pandas
 gunicorn
 psycopg2-binary
+cryptography
 django-cleanup
 djangorestframework
 django-rest-knox

@@ -393,21 +393,26 @@ def read_df_licorsmart(dataspec, filepath: str, return_df: bool):
 
     ## find lines that do not contain data
     textlines = []
-    with open(filepath, "r") as rd:
-        i = 0
-        for line in rd:
-            if not line:
-                break
-            elif (line[:1] != "1"): # note: this used to be (line[:2] != "1,")
-                textlines.append(i)
-            i += 1
+    try:
+        with open(filepath, "r") as rd:
+            i = 0
+            for line in rd:
+                if not line:
+                    break
+                elif (line[:1] != "1"): # note: this used to be (line[:2] != "1,")
+                    textlines.append(i)
+                i += 1
+    except Exception as e:
+        out['err'].append("read_df_licosmart: error in open() - " + str(e))
+        print(e)
+        return out
 
     ## read in file
     try:
         cnames = ['Type','Etime','Date','Tcham','Pressure','H2O','CO2',
                   'Cdry','Tsoil','cell_p','DOY','Hour','cell_t','chamber_p_t','co2_wet',
                   'flow_rate','soilp_c','soilp_m','soilp_t']
-        df = pandas.read_csv(filepath,sep=None,names=cnames,skiprows=textlines,
+        df = pandas.read_csv(filepath.path,sep=None,names=cnames,skiprows=textlines,
                              engine="python")
     except Exception as e:
         out['err'].append("read_df_licorsmart: error in pandas.read_csv() - " + str(e))
