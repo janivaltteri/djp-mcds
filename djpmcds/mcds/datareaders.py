@@ -187,6 +187,9 @@ def read_fieldform(dataspec,filepath,return_df,return_dict):
                 out['err'].append('cannot parse chamber volume ')
                 chambervol_ok = False
 
+        if not chambervol_ok:
+            return out
+
         c_vol_nans = df[chambervol_colname].apply(lambda x: True if numpy.isnan(x) else False)
         if c_vol_nans.any():
             out['err'].append('some chamber volumes are NaN')
@@ -216,6 +219,9 @@ def read_fieldform(dataspec,filepath,return_df,return_dict):
             except:
                 out['err'].append('cannot parse chamber area ')
                 chamberarea_ok = False
+
+        if not chamberarea_ok:
+            return out
 
         c_area_nans = df[chamberarea_colname].apply(lambda x: True if numpy.isnan(x) else False)
         if c_area_nans.any():
@@ -269,13 +275,26 @@ def read_fieldform(dataspec,filepath,return_df,return_dict):
 
     if ("start_temp" in req_names) and ("end_temp" in req_names):
         temps_ok = True
-        startnans = df[starttemp_colname].apply(lambda x: True if numpy.isnan(x) else False)
-        endnans = df[endtemp_colname].apply(lambda x: True if numpy.isnan(x) else False)
-        if startnans.any() and endnans.any():
-            out['err'].append('numerical values not available for either start temp or end temp ')
-            temps_ok = False
-            return out
+        for i in range(df.shape[0]):
+            if numpy.isnan(df.loc[i,starttemp_colname]):
+                if numpy.isnan(df.loc[i,endtemp_colname]):
+                    temps_ok = False
+                else:
+                    df.loc[i,starttemp_colname] = df.loc[i,endtemp_colname]
+            else:
+                if numpy.isnan(df.loc[i,endtemp_colname]):
+                    df.loc[i,endtemp_colname] = df.loc[i,starttemp_colname]
 
+        if not temps_ok:
+            out['err'].append('numerical values not available for either start temp or end temp ')
+            return out
+            
+        ##startnans = df[starttemp_colname].apply(lambda x: True if numpy.isnan(x) else False)
+        ##endnans = df[endtemp_colname].apply(lambda x: True if numpy.isnan(x) else False)
+        ##if startnans.any() and endnans.any():
+        ##    out['err'].append('numerical values not available for either start temp or end temp ')
+        ##    temps_ok = False
+        ##    return out
 
     ## everything ok, exit and return pandas dataframe and/or a dict
 

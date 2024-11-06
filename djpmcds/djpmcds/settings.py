@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 import os
 from pathlib import Path
+from datetime import timedelta
+from rest_framework.settings import api_settings
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'knox',
     'mcds.apps.McdsConfig',
     'django_cleanup.apps.CleanupConfig',
 ]
@@ -123,3 +126,20 @@ MEDIA_URL = '/files/'
 # Celery settings
 CELERY_BROKER_URL = 'amqp://guest:guest@rabbitmq:5672/'
 ##CELERY_RESULT_BACKEND = 'amqp://guest:guest@rabbitmq:5672/myvhost'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'knox.auth.TokenAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ]
+}
+
+REST_KNOX = {
+    'SECURE_HASH_ALGORITHM':'cryptography.hazmat.primitives.hashes.SHA512',
+    'AUTH_TOKEN_CHARACTER_LENGTH': 32,
+    'TOKEN_TTL': timedelta(hours=24),
+    'USER_SERIALIZER': 'knox.serializers.UserSerializer',
+    'TOKEN_LIMIT_PER_USER': 16,
+    'AUTO_REFRESH': False, # This defines if the token expiry time is extended by TOKEN_TTL each time the token is used.
+    'EXPIRY_DATETIME_FORMAT': api_settings.DATETIME_FORMAT,
+}

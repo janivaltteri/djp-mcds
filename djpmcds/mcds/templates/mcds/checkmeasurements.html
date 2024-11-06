@@ -198,13 +198,14 @@
  }
 
  let fetch_data = function() {
-   console.log("fetch_data called");
    let ajax_proc_url = "/mcds/checksubmission/" + meas_id;
+   console.log("fetch_data called: " + ajax_proc_url);
    $.ajax({
      type: "GET", url: ajax_proc_url, dataType: "json",
      data: { csrfmiddlewaretoken: "{{ csrf_token }}", },
      headers: {'X-CSRFToken': '{{ csrf_token }}'},
      success: function(data) {
+       console.log("fetch_data: success");
        d = data.data;
        console.log(data);
        for(let i = 0; i < d.length; i++){
@@ -226,9 +227,17 @@
        set_colours();
        set_visibilities();
        $('#db_wait_counter').hide();
+     },
+     error: function(xhr, ajaxOptions, thrownError) {
+       console.log("fetch_data: error");
+       console.log(xhr.status);
+       console.log(thrownError);
+     },
+     complete: function() {
+       console.log("fetch_data: complete");
      }
    });
- }
+   }
 
  $(function() {
    let processed = false;
