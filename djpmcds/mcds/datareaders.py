@@ -394,7 +394,7 @@ def read_df_licorsmart(dataspec, filepath: str, return_df: bool):
     ## find lines that do not contain data
     textlines = []
     try:
-        with open(filepath, "r") as rd:
+        with open(filepath.path, "r") as rd:
             i = 0
             for line in rd:
                 if not line:
