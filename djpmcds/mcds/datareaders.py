@@ -326,7 +326,7 @@ def read_df_licor(dataspec, filepath: str, return_df: bool):
     ## ensure date is readable
     date_format = dt_spec.get("date").get("format")
     try:
-        df["DATE"] = pandas.to_datetime(df["DATE"],format=date_format).dt.date
+        df["Date"] = pandas.to_datetime(df["DATE"],format=date_format).dt.date
     except:
         out["err"].append("read_df_licor: cannot parse DATE column ")
         return out
@@ -334,7 +334,7 @@ def read_df_licor(dataspec, filepath: str, return_df: bool):
     ## ensure TIME is datetime
     time_format = dt_spec.get("time").get("format")
     try:
-        df["TIME"] = pandas.to_datetime(df["TIME"],format=time_format).dt.time
+        df["Time"] = pandas.to_datetime(df["TIME"],format=time_format).dt.time
     except:
         out["err"].append("read_df_licor: error in pandas.to_datetime() ")
         return out
@@ -356,7 +356,7 @@ def read_df_licor(dataspec, filepath: str, return_df: bool):
             return out
 
     ## fill out obj
-    df = df[["DATE","TIME"] + gas_columns]
+    df = df[["Date","Time"] + gas_columns]
     df.dropna(subset=gas_columns, inplace=True) ## tarvitaanko reset_index?
     out['dims'] = df.shape
     out['ok'] = True
@@ -663,10 +663,10 @@ def get_series_data_from_ff(df,ff,spec):
     starttemp_column = ffreq.get("start_temp").get("column")
     endtemp_column   = ffreq.get("end_temp").get("column")
 
-    ## todo: how to handle Licorsmart datetime column?
-    data_datetime = dfspec.get("datetime")
-    date_col_name = data_datetime.get("date").get("column")
-    time_col_name = data_datetime.get("time").get("column")
+    ## renamed df datetime columns to "Date" and "Time" on all reader functions
+    ##data_datetime = dfspec.get("datetime")
+    date_col_name = "Date"
+    time_col_name = "Time"
 
     out = []
     for i in range(shape[0]):
@@ -694,7 +694,6 @@ def get_series_data_from_ff(df,ff,spec):
             et0 = datetime.datetime.combine(datetime.date.today(), end_time)
             duration = (et0 - st0).total_seconds()
 
-            ## todo: how to handle Licorsmart datetime column?
             try:
                 part = df[(df[date_col_name] == date.date()) &
                           (df[time_col_name] >= start_time) &

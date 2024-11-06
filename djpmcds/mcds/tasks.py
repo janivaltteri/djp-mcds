@@ -79,7 +79,7 @@ def process_dataset(meas_id):
     if device == "LI-COR":
         df = read_df_licor(spec,meas.datafile,True)
     elif device == "LI-COR Smartchamber":
-        df = read_df_licrosmart(spec,meas.datafile,True)
+        df = read_df_licorsmart(spec,meas.datafile,True)
     elif device == "Gasmet":
         df = read_df_gasmet(spec,meas.datafile,True)
     elif device == "EGM5":
